@@ -385,8 +385,13 @@ class Session:
             out_types.append({**t, "fields": fields})
         return {
             "types": out_types,
-            "entries": [{k: e[k] for k in ("id", "type", "title", "folder", "tags")} for e in w.entries().values()],
+            "entries": [{**{k: e[k] for k in ("id", "type", "title", "folder", "tags")},
+                         # F3 (M6 part C4): the editor shows a clue's text in its Information item.
+                         **({"text": str(e["fields"].get("description", "") or "")} if e["type"] == "clue" else {})}
+                        for e in w.entries().values()],
             "maps": [{"id": m["id"], "title": m.get("title", "")} for m in w.maps().values()],
+            # F3 (M6 part C4): the elements an author's own type may be shown as.
+            "cardKinds": [{"id": k, "name": labels.get(self.kinds()[k].get("name", ""), k)} for k in w.card_kinds()],
             "handouts": [{**{k: h[k] for k in ("number", "kind", "title", "chapter", "line")},
                           "sheets": sheets.get(h["number"], 1)} for h in w.handouts()],
         }
@@ -403,14 +408,16 @@ class Session:
             if use["where"] == "text" and use.get("scene") and use["scene"] not in scenes:
                 scenes.append(use["scene"])
         return {**entry, "backlinks": w.backlinks(entry_id), "scenes": scenes, "pages": pages,
-                "usages": w.usages(entry_id)}
+                "usages": w.usages(entry_id),
+                # F3 (M6 part C4): a Clue entry shows who knows it.
+                "knownBy": w.clue_knowers(entry_id) if entry["type"] == "clue" else []}
 
     def create_entry(self, type_id: str, title: str, fields: Optional[dict] = None, folder: str = "") -> dict:
         self._guard()
         self._world_change()
         try:
             entry = self.world.create_entry(type_id, title, fields, folder)
-        except WorldError:
+        except Exception:
             self.world_history.pop()
             raise
         self._world_changed()
@@ -421,7 +428,7 @@ class Session:
         self._world_change()
         try:
             entry = self.world.update_entry(entry_id, data)
-        except WorldError:
+        except Exception:
             self.world_history.pop()
             raise
         self._world_changed()
@@ -432,15 +439,36 @@ class Session:
         self._world_change()
         try:
             self.world.delete_entry(entry_id)  # refused while in use (F3.8)
-        except WorldError:
+        except Exception:
             self.world_history.pop()
             raise
         self._world_changed()
 
+    def convert_info(self, chapter: int, path: List[int]) -> dict:
+        """F3 (M6 part C4): what Convert to codex entry offers for a block."""
+        return self.world.convert_info(chapter, path)
+
+    def convert_to_entry(self, chapter: int, path: List[int], type_id: str, link: Optional[str] = None) -> dict:
+        """F3 (M6 part C4): the codex entry and the card in the text change
+        together, as one undo step."""
+        self._guard()
+        self._world_change()
+        try:
+            result = self.world.convert_block(chapter, path, type_id, link)
+        except Exception:
+            self.world_history.pop()
+            raise
+        self._world_changed()
+        return result
+
     def save_codex_type(self, data: dict) -> dict:
         self._guard()
         self._world_change()
-        definition = self.world.save_type(data)
+        try:
+            definition = self.world.save_type(data)
+        except Exception:
+            self.world_history.pop()
+            raise
         self._world_changed()
         return definition
 
@@ -1276,6 +1304,8 @@ class Session:
                 definition = kinds.get(block["kind"], {})
                 body = block.get("body")
                 filled = (isinstance(body, str) and body.strip()) or (isinstance(body, dict) and body.get("blocks"))
+                if block["kind"] == "information" and (block.get("fields") or {}).get("clue"):
+                    continue  # F3 (M6 part C4): it prints the clue's description
                 if definition.get("body_required") and not filled:
                     problems.append(Problem("warning.build.emptyElement", {"element": block["kind"]}, chapter, block.get("line")))
         return problems

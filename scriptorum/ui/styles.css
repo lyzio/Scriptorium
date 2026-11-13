@@ -678,3 +678,16 @@ body.preview-only .preview-pane { flex: 1; height: 100vh; box-sizing: border-box
 .map-item.item-line.selected { stroke-width: 5; }
 .map-pin-number-input { max-width: 90px; }
 .only-handout-tag { margin-left: 8px; padding: 1px 6px; border-radius: 8px; background: var(--accent-tint); color: var(--accent-ink); font-size: 10.5px; }
+
+/* F3 (M6 part C4): the codex picker, clue Information, fields kept on a card */
+#ask-text { white-space: pre-line; }
+.pick-search { width: 100%; box-sizing: border-box; margin: 4px 0 8px; }
+.pick-list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; min-width: 320px; }
+.pick-item { display: block; width: 100%; text-align: left; padding: 5px 8px; border: 0; background: transparent; color: inherit; border-radius: 4px; cursor: pointer; }
+.pick-item:hover, .pick-item:focus { background: var(--accent-tint); }
+.pick-actions { flex-wrap: wrap; }
+.clue-text { display: flex; flex-direction: column; gap: 4px; }
+.clue-body { opacity: 0.85; border-left: 2px solid var(--accent); padding-left: 8px; }
+.kept-fields { margin-top: 6px; font-size: 0.9em; opacity: 0.85; }
+.kept-field { font-family: monospace; white-space: pre-wrap; }
+.codex-chip-fixed { opacity: 0.8; font-style: italic; }

@@ -1086,13 +1086,31 @@ class Bridge(QObject):
         self._title_changed()
         self.requestBuild()
 
-    def _world_call(self, work):
+    def _world_call(self, work, changes: bool = True):
+        """Every codex, map and chart action. F3 (M6 part C4): codex actions
+        never fail silently. A refusal says why in plain words; an
+        unexpected error says so too, and its details go to the crash log in
+        the app's own folder (F2.11). Nothing is ever sent anywhere."""
+        if self.session.adventure is None:
+            return _json({"ok": False, "error": self.session.t("error.codex.noAdventure")})
         try:
             result = work()
-        except (WorldError, ScavError) as exc:
+        except (WorldError, ScavError, ModuleError) as exc:
             return self._error(exc)
-        self._changed()
+        except Exception as exc:  # noqa: BLE001
+            return self._unexpected(exc)
+        if changes:
+            self._changed()
         return _json({"ok": True, **(result if isinstance(result, dict) else {"result": result})})
+
+    def _unexpected(self, exc: Exception) -> str:
+        from scriptorum.core.crashlog import write_crash_log
+        try:
+            log = write_crash_log(type(exc), exc, exc.__traceback__, getattr(self, "crash_folder", None))
+            self.last_crash_log = str(log)
+        except OSError:
+            self.last_crash_log = None
+        return _json({"ok": False, "error": self.session.t("error.codex.failed"), "logged": self.last_crash_log is not None})
 
     @Slot(result=str)
     def codex(self) -> str:
@@ -1102,10 +1120,20 @@ class Bridge(QObject):
 
     @Slot(str, result=str)
     def entry(self, entry_id: str) -> str:
-        try:
-            return _json({"ok": True, **self.session.entry_info(entry_id)})
-        except WorldError as exc:
-            return self._error(exc)
+        return self._world_call(lambda: self.session.entry_info(entry_id), changes=False)
+
+    @Slot(str, result=str)
+    def convertInfo(self, request: str) -> str:
+        """F3 (M6 part C4): what Convert to codex entry offers for a block."""
+        data = json.loads(request)
+        return self._world_call(lambda: self.session.convert_info(int(data.get("chapter", 0)), data.get("path", [])),
+                                changes=False)
+
+    @Slot(str, result=str)
+    def convertToEntry(self, request: str) -> str:
+        data = json.loads(request)
+        return self._world_call(lambda: self.session.convert_to_entry(
+            int(data.get("chapter", 0)), data.get("path", []), data.get("type", ""), data.get("link") or None))
 
     @Slot(str, result=str)
     def createEntry(self, request: str) -> str:

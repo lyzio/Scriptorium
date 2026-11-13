@@ -10,6 +10,10 @@
     block(above: 0.9em, below: 0.6em, breakable: false, {
       text(weight: "bold", fill: accent, item.title)
       if item.description != none { block(above: 0.3em, below: 0.2em, item.description) }
+      // F3 (M6 part C4): who knows the clue.
+      if item.at("known-by", default: ()).len() > 0 {
+        block(above: 0.2em, below: 0.2em, text(size: 8.5pt, fill: quiet)[#label(labels, "print.known-by"): #item.known-by.join(", ")])
+      }
       if item.scenes.len() > 0 {
         text(size: 8.5pt, fill: quiet)[#label(labels, "print.appears-in"): #item.scenes.map(s =>
           if s.title == none { label(labels, "print.no-scene") } else [#label(labels, "print.scene") #s.number, #s.title]).join("; ")]

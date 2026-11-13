@@ -1,0 +1,10 @@
+{
+  "id": "c-ferry-landing",
+  "type": "place",
+  "fields": {
+    "name": "The ferry landing",
+    "description": "A grey jetty where the river runs fast."
+  },
+  "folder": "Places",
+  "tags": []
+}

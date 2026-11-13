@@ -12,7 +12,7 @@
 // description sit beside it, and everything after them runs at full width
 // under it. A card without a portrait prints as before.
 
-#import "_style.typ": accent, quiet, label, small-caps-label, blank, empty-body, in-card, icon, variant-styles, fonts, spacing, frame-par, portrait-width, portrait-frame, gap
+#import "_style.typ": accent, quiet, label, small-caps-label, blank, empty-body, in-card, icon, variant-styles, fonts, spacing, frame-par, portrait-width, portrait-frame, gap, clue-mark
 
 // M3: a person from the codex also lists Information written elsewhere that
 // they know, as a short pointer with its page, so the same text is never
@@ -24,8 +24,21 @@
     h(0.35em)
     small-caps-label(label(labels, "print.information." + item.variant), fill: style.color)
     h(0.45em)
-    [#item.summary #label(labels, "print.see-page").replace("{page}", str(item.page))]
+    // F3 (M6 part C4): a clue known here prints its mark and name.
+    let what = if item.at("clue", default: none) != none { [#clue-mark(style.color)#h(0.3em)#item.clue] } else { item.summary }
+    [#what #label(labels, "print.see-page").replace("{page}", str(item.page))]
   }))
+}
+
+// 11.4 (M6 part C4): the Clues line, each clue once with its page pointer.
+#let clues-line(items, labels) = if items.len() > 0 {
+  block(above: gap(spacing.medium), below: 0pt, {
+    [#text(weight: "bold", fill: accent)[#label(labels, "print.clues"):] ]
+    items.map(c => {
+      let page = if c.page == none { [] } else { [ #label(labels, "print.see-page").replace("{page}", str(c.page))] }
+      if c.target == none [#c.title] else { link(c.target)[#c.title#page] }
+    }).join(", ")
+  })
 }
 
 // The name, the mood and the description: beside the portrait, if any.
@@ -35,6 +48,15 @@
   if not blank(f.mood) {
     block(above: gap(spacing.small), below: 0pt,
       [#text(weight: "bold", fill: accent)[#label(labels, "print.mood"):] #emph(f.mood)])
+  }
+  // 11.4 (M6 part C4): How to play, right under Mood, with a small label.
+  let how = f.at("how-to-play", default: none)
+  if not blank(how) {
+    block(above: gap(spacing.small), below: 0pt, {
+      small-caps-label(label(labels, "print.how-to-play"), fill: quiet)
+      h(0.45em)
+      how
+    })
   }
   if not blank(f.description) {
     block(above: gap(spacing.small), below: 0pt, f.description)
@@ -79,5 +101,7 @@
         pointers(items, labels)
       }
     }
+    let clues = f.at("clues", default: none)
+    if clues != none { context clues-line(clues(), labels) }
   }),
 )

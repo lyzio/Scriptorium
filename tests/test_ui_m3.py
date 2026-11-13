@@ -166,7 +166,9 @@ def test_T_WORLD_09_entries_from_text(ui):
     ui.run("window.__scriptorum.personToEntry([2, 3])")
     ui.run("window.__scriptorum.flush()")
     text = ui.state()["text"]
-    assert '#card(entry: "c-lovisa-berg")[' in text and "#person(" not in text
+    # M6 part C4: the M2 text in Linked to, which the Person type has no
+    # field for, stays on the card (F3: nothing is lost).
+    assert '#card(entry: "c-lovisa-berg", linked-to: "The harbour, the Hoppet")[' in text and "#person(" not in text
     assert session(ui).world.entry("c-lovisa-berg")["fields"]["mood"] == "Tired and stubborn"
     # Select "Åsa" in the first paragraph and make it an entry.
     ui.js("""(() => { const box = [...document.querySelectorAll('#visual .rich')].find(b => b.textContent.includes('Åsa')); box.focus();

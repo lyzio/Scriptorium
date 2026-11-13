@@ -24,7 +24,9 @@ export interface CodexType {
 
 export interface Codex {
   types: CodexType[];
-  entries: { id: string; type: string; title: string; folder: string; tags: string[] }[];
+  entries: { id: string; type: string; title: string; folder: string; tags: string[]; text?: string }[];
+  /** F3 (M6 part C4): the elements an author's own type may be shown as. */
+  cardKinds?: { id: string; name: string }[];
   maps: { id: string; title: string }[];
   handouts: { number: number; kind: string; title: string; chapter: number; line: number; sheets?: number }[];
 }
@@ -102,9 +104,14 @@ export function typeOf(id: string): CodexType | undefined {
 }
 
 async function change(slot: string, ...args: unknown[]): Promise<any | null> {
+  // F3 (M6 part C4): codex actions never fail silently.
+  if (api.readOnly()) {
+    api.showMessage(t("codex.readOnly"));
+    return null;
+  }
   const reply = await call(slot, ...args);
   if (!reply?.ok) {
-    if (reply?.error) api.showMessage(reply.error);
+    api.showMessage(reply?.error || t("error.codex.failed"));
     return null;
   }
   api.markUndoStep();
@@ -154,7 +161,10 @@ export function ask(title: string, options?: { label: string; choices?: { id: st
 
 /** New entry (F3): ask for the type (unless given) and the name. */
 export async function newEntry(type = "", title = "", folder = ""): Promise<string | null> {
-  if (api.readOnly()) return null;
+  if (api.readOnly()) {
+    api.showMessage(t("codex.readOnly"));
+    return null;
+  }
   const choices = codex.types.filter((x) => !type || x.id === type).map((x) => ({ id: x.id, label: x.name }));
   const answer = await ask(t("codex.newEntryTitle"), { label: t("codex.name"), choices: type ? [] : choices, value: title });
   if (!answer) return null;
@@ -342,7 +352,7 @@ async function flushEntry(): Promise<void> {
   if (!job) return;
   const reply = await call("updateEntry", JSON.stringify(job));
   if (!reply?.ok) {
-    if (reply?.error) api.showMessage(reply.error);
+    api.showMessage(reply?.error || t("error.codex.failed"));
     return;
   }
   api.markUndoStep();
@@ -362,7 +372,7 @@ export async function openEntry(id: string, keepScroll = false): Promise<void> {
   await flushEntry();
   const info = await call("entry", id);
   if (!info?.ok) {
-    if (info?.error) api.showMessage(info.error);
+    api.showMessage(info?.error || t("error.codex.failed"));
     return;
   }
   const type = typeOf(info.type);
@@ -417,6 +427,16 @@ export async function openEntry(id: string, keepScroll = false): Promise<void> {
   const lines: HTMLElement[] = [];
   if (info.scenes.length) lines.push(h("p", "", t("codex.inScenes", { scenes: info.scenes.join(", ") })));
   if (info.pages.length) lines.push(h("p", "", t("codex.onPages", { pages: info.pages.join(", ") })));
+  // F3 (M6 part C4): a Clue entry shows who knows it.
+  if (info.knownBy?.length) {
+    const p = h("p", "entry-known-by", t("codex.knownBy") + " ");
+    info.knownBy.forEach((k: any, i: number) => {
+      if (i) p.append(", ");
+      if (k.id) p.append(button(k.title, "link", () => openEntry(k.id)));
+      else p.append(k.title);
+    });
+    lines.push(p);
+  }
   if (info.backlinks.length) {
     const p = h("p", "", t("codex.linkedFrom") + " ");
     info.backlinks.forEach((b: any, i: number) => {
@@ -554,6 +574,20 @@ export function openTypeEditor(id: string): void {
   const nameRow = h("label", "field entry-field");
   nameRow.append(h("span", "field-label", t("codex.typeName")), name);
   body.append(nameRow, h("p", "settings-note", t("codex.typeNote")));
+  // F3 (M6 part C4): the element that shows the entry in the text; a person
+  // card or a creature lets Convert to codex entry offer this type too.
+  const card = h("select", "field-input type-card");
+  const plain = h("option", "", t("codex.typeCardPlain"));
+  plain.value = "";
+  card.append(plain);
+  for (const k of codex.cardKinds ?? []) {
+    const o = h("option", "", k.name);
+    o.value = k.id;
+    card.append(o);
+  }
+  const cardRow = h("label", "field entry-field");
+  cardRow.append(h("span", "field-label", t("codex.typeCard")), card);
+  body.append(cardRow);
   const rows = h("div", "type-fields");
   const addRow = () => {
     const row = h("div", "type-field");
@@ -578,7 +612,7 @@ export function openTypeEditor(id: string): void {
       const [label, kind, options] = row.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select");
       return { label: label.value.trim(), kind: kind.value, options: options.value.split(",").map((x) => x.trim()).filter(Boolean) };
     }).filter((f) => f.label);
-    const reply = await change("saveCodexType", JSON.stringify({ name: name.value, fields }));
+    const reply = await change("saveCodexType", JSON.stringify({ name: name.value, fields, card: card.value || undefined }));
     if (reply) {
       api.flash(t("codex.typeSaved", { name: name.value }));
       closeView();
@@ -592,7 +626,10 @@ export function openTypeEditor(id: string): void {
 // --- maps (F5) --------------------------------------------------------------------------
 
 export async function newMap(): Promise<void> {
-  if (api.readOnly()) return;
+  if (api.readOnly()) {
+    api.showMessage(t("codex.readOnly"));
+    return;
+  }
   const answer = await ask(t("map.newTitle"), { label: t("map.title") });
   if (!answer) return;
   const reply = await change("createMapDialog", answer.text);

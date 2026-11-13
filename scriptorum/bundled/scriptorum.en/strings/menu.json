@@ -58,5 +58,6 @@
   "insertNeedsAdventure": "Open or create an adventure first",
   "insertReadOnly": "This adventure is read-only",
   "enterFullScreen": "Enter full screen",
-  "exitFullScreen": "Exit full screen"
+  "exitFullScreen": "Exit full screen",
+  "insertClue": "Clue"
 }

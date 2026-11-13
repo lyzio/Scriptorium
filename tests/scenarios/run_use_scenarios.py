@@ -165,6 +165,10 @@ def insert_from_menu(s: Scenario, label: str) -> list:
     # M4: the Insert menu keeps the full list (the toolbar has insert groups).
     items = s.act("Insert menu", "window.__u.menu('Insert')")
     s.act(f"Insert → {label}", f"window.__u.pick({json.dumps(label)})", 400)
+    # M6 part C4: Person and Creature first offer the codex; a one-off
+    # character is written as a loose card, as before.
+    if label in ("Person", "Creature") and s.js("document.getElementById('pick-dialog').open"):
+        s.act("Picker → Write a loose card here", "window.__u.click('#pick-loose')", 400)
     return items
 
 
@@ -439,6 +443,7 @@ def use_02(window: MainWindow) -> dict:
     window_steps(s, window)
     portrait_steps(s, window)
     sub_heading_steps(s, window)
+    codex_steps(s, window)
     return s.summary()
 
 
@@ -801,6 +806,54 @@ def end_of_scene_steps(s: Scenario, window: MainWindow) -> None:
     s.steps += 1
     s.log.append(f"{s.steps:>3}. Export PDF -> ok={reply.get('ok')}")
     s.check("PDF with an info page and a give-out line exported", bool(reply.get("ok")))
+
+
+def codex_steps(s: Scenario, window: MainWindow) -> None:
+    """Milestone 6 part C4 steps of T-USE-02: the Game Master turns a loose
+    person card into a codex person, gives her How to play, inserts a codex
+    person and a clue through the pickers, and exports."""
+    s.act("Click into the first scene", "window.__u.focus('#visual .el-scene .rich', 0)")
+    insert_from_menu(s, "Person")
+    s.act("Name", "window.__u.type('.el-person .field-name input', 0, 'Ebba Rask')")
+    s.act("Mood", "window.__u.type('.el-person .field-mood input', 0, 'Restless')")
+    loose = s.js("[...document.querySelectorAll('#visual .el-person')].length") or 0
+    s.check("a loose person card to convert", loose >= 1)
+    s.act("Write How to play", "window.__u.type('.el-person .field-how-to-play .rich', 0, 'Talks fast, never sits down.')")
+    s.flush()
+    s.act("Right-click the person card", """(() => { const sec = document.querySelector('#visual .el-person').closest('section.blk');
+        const r = sec.getBoundingClientRect(); sec.querySelector('.rich, input').dispatchEvent(new MouseEvent('contextmenu',
+        {bubbles: true, cancelable: true, clientX: r.left + 40, clientY: r.top + 8})); return window.__u.menuItems(); })()""")
+    s.act("Convert to codex entry", "window.__u.pick('Convert to codex entry')", 900)
+    if s.js("document.getElementById('ask-dialog').open"):
+        s.act("Make a new entry", "window.__u.click('#ask-no')", 900)
+    s.flush()
+    text = s.state()["text"] or ""
+    s.check("the person card became a codex card", "#card(entry:" in text)
+    s.act("Click into the first scene", "window.__u.focus('#visual .el-scene .rich', 0)")
+    insert_from_menu_raw = s.act("Insert menu", "window.__u.menu('Insert')")
+    s.check("Insert menu lists Clue", "Clue" in " ".join(insert_from_menu_raw or []))
+    s.act("Insert → Person", "window.__u.pick('Person')", 400)
+    people = s.js("[...document.querySelectorAll('#pick-list .pick-item')].map(b => b.textContent)") or []
+    s.check("the picker lists the codex people", len(people) >= 1)
+    s.act("Picker → New codex person…", "window.__u.click('#pick-new')", 400)
+    answer_prompt(s, "Greta Vik")
+    s.act("Insert menu", "window.__u.menu('Insert')")
+    s.act("Insert → Clue", "window.__u.pick('Clue')", 400)
+    s.act("Picker → New clue…", "window.__u.click('#pick-new')", 400)
+    answer_prompt(s, "The wet footprints")
+    s.flush()
+    text = s.state()["text"] or ""
+    s.check("a card of the new codex person", '#card(entry: "c-greta-vik")' in text)
+    s.check("a clue Information of the Hint variant", 'clue: "c-the-wet-footprints", variant: "hint"' in text)
+    s.note("friction", "A new clue starts without a description. Text typed into its Information item stays with that item "
+           "and is not saved as the clue's description, so a second item showing the same clue prints only its name "
+           "until the clue is given a text in the codex.", "later")
+    (OUT / "T-USE-02-codex.typ").write_text(text, "utf-8")
+    s.shot("codex")
+    reply = json.loads(window.bridge.exportTo(str(OUT / "T-USE-02-codex.pdf")))
+    s.steps += 1
+    s.log.append(f"{s.steps:>3}. Export PDF -> ok={reply.get('ok')}")
+    s.check("PDF with codex cards and a clue exported", bool(reply.get("ok")))
 
 
 def _scenario_png(width: int = 2400, height: int = 1600) -> bytes:

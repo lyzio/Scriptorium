@@ -26,6 +26,8 @@ export interface Block {
   // F4.6 images; F17.3 (M5): alt, the description for screen readers
   alt?: string;
   path?: string;
+  // F3 (M6 part C4): fields a codex card keeps because its codex type lacks them
+  extra?: Record<string, string>;
 }
 
 export interface FieldDef {

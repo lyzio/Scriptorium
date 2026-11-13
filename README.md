@@ -1,8 +1,19 @@
-# Scriptorum — M6-0.6.5 (Milestone 6: Modules and release, part C3)
+# Scriptorum — M6-0.6.6 (Milestone 6: Modules and release, part C4)
 
-Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1, C2 and C3 of Milestone 6** of the design document (section 10).
+Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1, C2, C3 and C4 of Milestone 6** of the design document (section 10).
 
 Licence: GPL-3.0-or-later (see `COPYING`).
+
+## What M6 part C4 adds
+
+- **Convert to codex entry, everywhere it fits (F3).** Right-click a person card, a creature, or any block whose kind is the card element of a codex type, and choose Convert to codex entry. A new entry gets every field the block has; a field the codex type lacks stays on the card in the text (in the editor under "Kept on this card"), so nothing is lost. The block becomes a card of the entry and prints as before. Information written inside a person card stays inside and is known by the entry. One Undo brings back both the card and the codex. A codex card does not offer it.
+- **A taken name, and several fitting types (F3).** If an entry of that type has the same name, you are asked "Link to the existing Ulrika, or make a new entry?". Link first lists every value that differs ("Mood: card says ‘nervous’, entry says ‘calm’"), keeps the entry's values and fills its empty fields from the card. When several types fit, you pick the type first.
+- **Pickers for Person, Creature and Clue (F3).** Insert ▸ Person and Insert ▸ Creature open a small picker: the codex's people (or creatures) first, narrowed as you type (Enter takes the first), then New codex person… (or creature), then Write a loose card here. A new entry and its card are one undo step. The Codex card item lists only places, clues and your own types.
+- **Clues as Information (F3, 11.3).** Information has a Clue field. Insert ▸ Clue (in the Insert menu, after Information) picks or makes a clue and inserts a Hint linked to it, inside the person card when the cursor is in one. It prints the clue's description, with a small clue mark and the clue's name; on the cards of others who know it, as a pointer with its page. The editor shows the clue's text with an Edit the clue button. A Clue entry shows who knows it, and the clue overview lists that too.
+- **How to play and the Clues line (11.4).** A person (card and codex entry) has How to play, printed right under Mood with a small HOW TO PLAY label. A Clues line lists each clue connected to the person, through clue Information they know or through Linked to, with its page. Neither prints when empty, so other cards print exactly as before.
+- **Codex actions never fail silently (F3).** A read-only adventure says "This adventure is read-only"; an unexpected error says so in plain words and writes the details to a crash log in the app's own folder.
+- **Own codex types.** The New type editor has "Shown in the text as": a codex card, a person card or a creature. A type shown as a person card is offered by Convert to codex entry on person cards.
+- **Update address.** Still the placeholder "Paste update url here"; paste the real address into `UPDATE_URL` in `scriptorum/core/updates.py` before release.
 
 ## What M6 part C3 adds
 
@@ -240,6 +251,13 @@ python -m pytest -m "not ui"
 The first runs everything; the second leaves out the window tests. The tests follow the project's Test Plan; each test name carries its plan ID, for example `test_T_FILE_08_…`. On Linux without a screen the window tests run headless (`QT_QPA_PLATFORM=offscreen` is set by the tests). The `tests` folder is a Python package, because spylls installs a package of its own called `tests`.
 
 ## Trying it by hand
+
+Pack the M6 part C4 sample, *The Ferryman's Debt*, with clues, a codex person with How to play, and loose cards to convert. Right-click Märta Holm's card and choose Convert to codex entry (it asks which type: Person, or the sample's own type River folk); right-click the second Ulrika to see the Link or new question. Try Insert ▸ Person, Insert ▸ Creature and Insert ▸ Clue:
+
+```
+python -c "from tests.conftest import pack_sample; from pathlib import Path; pack_sample('m6-clues', Path('.'))"
+python -m scriptorum m6-clues.scav
+```
 
 Pack the example adventure and open it. Put the cursor in a scene and choose Insert ▸ End of scene, then add a Sub-heading 1 after it. Open a map in the Codex tab and try the Line tool. Tick Only as handout on a handout. Drag blocks by the strip at their left, into and out of a Box; drag an Information box into a person card. Right-click a sub-heading to raise or lower it, and drag sub-headings in the Outline tab. Open a person in the Codex tab, choose a Portrait and describe it; the card in the preview shows the picture in its corner. Insert ▸ Column break in a scene, and Help ▸ Check for updates…:
 

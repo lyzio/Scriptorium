@@ -48,7 +48,9 @@ export interface EditorHooks {
   /** An act or scene was folded or unfolded (screen only, never saved). */
   onCollapseChange?(): void;
   // Milestone 3: codex references (F3.5) and maps (F5.4).
-  codexEntries(): { id: string; title: string; type: string }[];
+  codexEntries(): { id: string; title: string; type: string; text?: string }[];
+  /** F3 (M6 part C4): codex types that have a card of their own (Person, Creature). */
+  typesWithCard?(): string[];
   maps(): { id: string; title: string }[];
   /** A new codex entry; with a name and a single type it is made at once. */
   createEntry(type: string, title?: string): Promise<string | null>;
@@ -494,14 +496,34 @@ export class VisualEditor {
       case "id":
       case "seed":
         return null;
-      case "codex":
-        return this.codexPicker(field, value === undefined ? [] : [String(value)], false, (ids) => set(ids[0]));
-      case "codex-list":
-        return this.codexPicker(field, Array.isArray(value) ? (value as string[]) : [], true, (ids) => {
+      case "codex": {
+        // F3 (M6 part C4): a codex card is for everything else: people and
+        // creatures have cards of their own (Insert ▸ Person, Creature).
+        const own = block.kind === "card" && field.name === "entry" ? this.hooks.typesWithCard?.() ?? [] : [];
+        const picker = this.codexPicker(field, value === undefined ? [] : [String(value)], false, (ids) => {
+          set(ids[0]);
+          // Picking a clue shows its text in place of the item's own (11.3).
+          if (block.kind === "information" && field.name === "clue") this.render();
+        }, own);
+        return picker;
+      }
+      case "codex-list": {
+        const picker = this.codexPicker(field, Array.isArray(value) ? (value as string[]) : [], true, (ids) => {
           if (!ids.length) delete fields[field.name];
           else (fields as any)[field.name] = ids;
           this.changed(block, place.chain, true);
         });
+        // F3 (M6 part C4): Information written in a codex card is known by
+        // that card's entry, so the person shows in its Known by.
+        const owner = place.chain[place.chain.length - 1];
+        const holder = owner?.kind === "card" ? String(owner.fields?.entry ?? "") : "";
+        if (block.kind === "information" && field.name === "known-by" && holder) {
+          const chip = el("span", "codex-chip codex-chip-fixed");
+          chip.textContent = (this.hooks.codexEntries().find((e) => e.id === holder)?.title ?? holder) + " · " + t("codex.inCard");
+          picker.prepend(chip);
+        }
+        return picker;
+      }
       case "map-ref": {
         const row = el("div", "field-ref-row");
         const select = el("select", "field-input field-ref");
@@ -662,9 +684,9 @@ export class VisualEditor {
   }
 
   /** F3.5: pick one codex entry, or several, of the types the field allows. */
-  private codexPicker(field: FieldDef, ids: string[], many: boolean, set: (ids: string[]) => void): HTMLElement {
+  private codexPicker(field: FieldDef, ids: string[], many: boolean, set: (ids: string[]) => void, notTypes: string[] = []): HTMLElement {
     const row = el("div", "codex-picker");
-    const entries = this.hooks.codexEntries().filter((e) => !field.types || field.types.includes(e.type));
+    const entries = this.hooks.codexEntries().filter((e) => (!field.types || field.types.includes(e.type)) && !notTypes.includes(e.type));
     const titleOf = (id: string) => this.hooks.codexEntries().find((e) => e.id === id)?.title ?? t("editor.missingEntry", { id });
     for (const id of ids) {
       const chip = el("span", "codex-chip");
@@ -876,7 +898,26 @@ export class VisualEditor {
     }
 
     const chain = [...place.chain, block];
-    if (def.body === "rich" || def.body === "plain") {
+    const clue = block.kind === "information" ? String(block.fields?.clue ?? "") : "";
+    const clueEntry = clue ? this.hooks.codexEntries().find((e) => e.id === clue) : undefined;
+    if (clue && clueEntry?.text) {
+      // F3 (M6 part C4): the text is written once, in the clue's entry.
+      const shown = el("div", "clue-text");
+      const caption = el("div", "children-caption");
+      caption.textContent = t("codex.clueText");
+      const text = el("div", "rich el-body clue-body", { role: "note" });
+      text.innerHTML = inlineToHtml(clueEntry.text);
+      const edit = el("button", "small-btn", { type: "button" });
+      edit.textContent = t("codex.editClue");
+      edit.addEventListener("click", () => this.hooks.openEntry(clue));
+      shown.append(caption, text, edit);
+      box.append(shown);
+    } else if (def.body === "rich" || def.body === "plain") {
+      if (clue) {
+        const note = el("div", "children-caption clue-empty");
+        note.textContent = t("codex.clueEmpty");
+        box.append(note);
+      }
       const text = typeof block.body === "string" ? block.body : "";
       const onEnter = def.enterAddsNext ? () => this.insert(def.id, place) : undefined;
       box.append(this.richBox(text, (markup) => {
@@ -900,7 +941,33 @@ export class VisualEditor {
       }
       box.append(inner);
     }
+    const kept = (block as Block & { extra?: Record<string, string> }).extra;
+    if (block.kind === "card" && kept && Object.keys(kept).length) {
+      // F3 (M6 part C4): fields the codex type lacks stay on the card as written.
+      const list = el("div", "kept-fields");
+      const caption = el("div", "children-caption");
+      caption.textContent = t("codex.keptOnCard");
+      list.append(caption);
+      for (const [name, raw] of Object.entries(kept)) {
+        const line = el("div", "kept-field");
+        line.textContent = name + ": " + raw;
+        list.append(line);
+      }
+      box.append(list);
+    }
     return box;
+  }
+
+  /** The path of indexes to a block, as the core finds it (F3, M6 part C4). */
+  pathOf(place: Place): number[] {
+    const path: number[] = [];
+    let list = this.doc;
+    for (const outer of place.chain) {
+      path.push(list.blocks.indexOf(outer));
+      list = outer.body as Doc;
+    }
+    path.push(place.index);
+    return path;
   }
 
   // --- tables (F4.5) and images (F4.6) ---------------------------------------

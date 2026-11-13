@@ -1058,14 +1058,29 @@
         case "id":
         case "seed":
           return null;
-        case "codex":
-          return this.codexPicker(field, value === void 0 ? [] : [String(value)], false, (ids) => set2(ids[0]));
-        case "codex-list":
-          return this.codexPicker(field, Array.isArray(value) ? value : [], true, (ids) => {
+        case "codex": {
+          const own = block.kind === "card" && field.name === "entry" ? this.hooks.typesWithCard?.() ?? [] : [];
+          const picker = this.codexPicker(field, value === void 0 ? [] : [String(value)], false, (ids) => {
+            set2(ids[0]);
+            if (block.kind === "information" && field.name === "clue") this.render();
+          }, own);
+          return picker;
+        }
+        case "codex-list": {
+          const picker = this.codexPicker(field, Array.isArray(value) ? value : [], true, (ids) => {
             if (!ids.length) delete fields[field.name];
             else fields[field.name] = ids;
             this.changed(block, place.chain, true);
           });
+          const owner = place.chain[place.chain.length - 1];
+          const holder = owner?.kind === "card" ? String(owner.fields?.entry ?? "") : "";
+          if (block.kind === "information" && field.name === "known-by" && holder) {
+            const chip = el("span", "codex-chip codex-chip-fixed");
+            chip.textContent = (this.hooks.codexEntries().find((e) => e.id === holder)?.title ?? holder) + " \xB7 " + t("codex.inCard");
+            picker.prepend(chip);
+          }
+          return picker;
+        }
         case "map-ref": {
           const row2 = el("div", "field-ref-row");
           const select2 = el("select", "field-input field-ref");
@@ -1218,9 +1233,9 @@
       }
     }
     /** F3.5: pick one codex entry, or several, of the types the field allows. */
-    codexPicker(field, ids, many, set2) {
+    codexPicker(field, ids, many, set2, notTypes = []) {
       const row2 = el("div", "codex-picker");
-      const entries = this.hooks.codexEntries().filter((e) => !field.types || field.types.includes(e.type));
+      const entries = this.hooks.codexEntries().filter((e) => (!field.types || field.types.includes(e.type)) && !notTypes.includes(e.type));
       const titleOf = (id2) => this.hooks.codexEntries().find((e) => e.id === id2)?.title ?? t("editor.missingEntry", { id: id2 });
       for (const id2 of ids) {
         const chip = el("span", "codex-chip");
@@ -1416,7 +1431,25 @@
         if (folded.childElementCount) box.append(folded);
       }
       const chain = [...place.chain, block];
-      if (def.body === "rich" || def.body === "plain") {
+      const clue = block.kind === "information" ? String(block.fields?.clue ?? "") : "";
+      const clueEntry = clue ? this.hooks.codexEntries().find((e) => e.id === clue) : void 0;
+      if (clue && clueEntry?.text) {
+        const shown = el("div", "clue-text");
+        const caption = el("div", "children-caption");
+        caption.textContent = t("codex.clueText");
+        const text = el("div", "rich el-body clue-body", { role: "note" });
+        text.innerHTML = inlineToHtml(clueEntry.text);
+        const edit = el("button", "small-btn", { type: "button" });
+        edit.textContent = t("codex.editClue");
+        edit.addEventListener("click", () => this.hooks.openEntry(clue));
+        shown.append(caption, text, edit);
+        box.append(shown);
+      } else if (def.body === "rich" || def.body === "plain") {
+        if (clue) {
+          const note = el("div", "children-caption clue-empty");
+          note.textContent = t("codex.clueEmpty");
+          box.append(note);
+        }
         const text = typeof block.body === "string" ? block.body : "";
         const onEnter = def.enterAddsNext ? () => this.insert(def.id, place) : void 0;
         box.append(this.richBox(text, (markup) => {
@@ -1439,7 +1472,31 @@
         }
         box.append(inner);
       }
+      const kept = block.extra;
+      if (block.kind === "card" && kept && Object.keys(kept).length) {
+        const list = el("div", "kept-fields");
+        const caption = el("div", "children-caption");
+        caption.textContent = t("codex.keptOnCard");
+        list.append(caption);
+        for (const [name2, raw] of Object.entries(kept)) {
+          const line = el("div", "kept-field");
+          line.textContent = name2 + ": " + raw;
+          list.append(line);
+        }
+        box.append(list);
+      }
       return box;
+    }
+    /** The path of indexes to a block, as the core finds it (F3, M6 part C4). */
+    pathOf(place) {
+      const path = [];
+      let list = this.doc;
+      for (const outer of place.chain) {
+        path.push(list.blocks.indexOf(outer));
+        list = outer.body;
+      }
+      path.push(place.index);
+      return path;
     }
     // --- tables (F4.5) and images (F4.6) ---------------------------------------
     renderTable(block, place) {
@@ -33416,9 +33473,13 @@
     return codex.types.find((x2) => x2.id === id2);
   }
   async function change(slot, ...args) {
+    if (api2.readOnly()) {
+      api2.showMessage(t("codex.readOnly"));
+      return null;
+    }
     const reply = await call(slot, ...args);
     if (!reply?.ok) {
-      if (reply?.error) api2.showMessage(reply.error);
+      api2.showMessage(reply?.error || t("error.codex.failed"));
       return null;
     }
     api2.markUndoStep();
@@ -33461,7 +33522,10 @@
     });
   }
   async function newEntry(type = "", title = "", folder = "") {
-    if (api2.readOnly()) return null;
+    if (api2.readOnly()) {
+      api2.showMessage(t("codex.readOnly"));
+      return null;
+    }
     const choices = codex.types.filter((x2) => !type || x2.id === type).map((x2) => ({ id: x2.id, label: x2.name }));
     const answer = await ask2(t("codex.newEntryTitle"), { label: t("codex.name"), choices: type ? [] : choices, value: title });
     if (!answer) return null;
@@ -33626,7 +33690,7 @@
     if (!job) return;
     const reply = await call("updateEntry", JSON.stringify(job));
     if (!reply?.ok) {
-      if (reply?.error) api2.showMessage(reply.error);
+      api2.showMessage(reply?.error || t("error.codex.failed"));
       return;
     }
     api2.markUndoStep();
@@ -33647,7 +33711,7 @@
     await flushEntry();
     const info2 = await call("entry", id2);
     if (!info2?.ok) {
-      if (info2?.error) api2.showMessage(info2.error);
+      api2.showMessage(info2?.error || t("error.codex.failed"));
       return;
     }
     const type = typeOf(info2.type);
@@ -33697,6 +33761,15 @@
     const lines = [];
     if (info2.scenes.length) lines.push(h3("p", "", t("codex.inScenes", { scenes: info2.scenes.join(", ") })));
     if (info2.pages.length) lines.push(h3("p", "", t("codex.onPages", { pages: info2.pages.join(", ") })));
+    if (info2.knownBy?.length) {
+      const p2 = h3("p", "entry-known-by", t("codex.knownBy") + " ");
+      info2.knownBy.forEach((k, i) => {
+        if (i) p2.append(", ");
+        if (k.id) p2.append(button(k.title, "link", () => openEntry(k.id)));
+        else p2.append(k.title);
+      });
+      lines.push(p2);
+    }
     if (info2.backlinks.length) {
       const p2 = h3("p", "", t("codex.linkedFrom") + " ");
       info2.backlinks.forEach((b, i) => {
@@ -33827,6 +33900,18 @@
     const nameRow = h3("label", "field entry-field");
     nameRow.append(h3("span", "field-label", t("codex.typeName")), name);
     body.append(nameRow, h3("p", "settings-note", t("codex.typeNote")));
+    const card = h3("select", "field-input type-card");
+    const plain = h3("option", "", t("codex.typeCardPlain"));
+    plain.value = "";
+    card.append(plain);
+    for (const k of codex.cardKinds ?? []) {
+      const o = h3("option", "", k.name);
+      o.value = k.id;
+      card.append(o);
+    }
+    const cardRow = h3("label", "field entry-field");
+    cardRow.append(h3("span", "field-label", t("codex.typeCard")), card);
+    body.append(cardRow);
     const rows = h3("div", "type-fields");
     const addRow = () => {
       const row2 = h3("div", "type-field");
@@ -33851,7 +33936,7 @@
         const [label, kind, options2] = row2.querySelectorAll("input, select");
         return { label: label.value.trim(), kind: kind.value, options: options2.value.split(",").map((x2) => x2.trim()).filter(Boolean) };
       }).filter((f) => f.label);
-      const reply = await change("saveCodexType", JSON.stringify({ name: name.value, fields }));
+      const reply = await change("saveCodexType", JSON.stringify({ name: name.value, fields, card: card.value || void 0 }));
       if (reply) {
         api2.flash(t("codex.typeSaved", { name: name.value }));
         closeView();
@@ -33862,7 +33947,10 @@
     name.focus();
   }
   async function newMap() {
-    if (api2.readOnly()) return;
+    if (api2.readOnly()) {
+      api2.showMessage(t("codex.readOnly"));
+      return;
+    }
     const answer = await ask2(t("map.newTitle"), { label: t("map.title") });
     if (!answer) return;
     const reply = await change("createMapDialog", answer.text);
@@ -35017,6 +35105,7 @@
         seenGroups.add(def.shortcutGroup);
       }
       items.push({ label: def.name, action: () => pick(def.id), shortcut });
+      if (def.id === "information" && pickerType("clue")) items.push({ label: t("menu.insertClue"), action: () => pick("clue") });
     }
     for (const kind of ["table", "image"]) {
       if (allowed.includes(kind)) items.push({ label: kindLabel(kind), action: () => pick(kind) });
@@ -35367,6 +35456,7 @@
       if (result?.ok) visual.insertBlock({ type: "image", path: result.path }, place ?? void 0);
       return;
     }
+    if ((kind === "person" || kind === "creature" || kind === "clue") && await insertFromCodex(kind, place)) return;
     const def = state.defs.find((d) => d.id === kind);
     if (def?.codexRef === "mention" || def?.codexRef === "see") {
       const anchor = document.activeElement instanceof HTMLElement ? document.activeElement : $6("tb-groups");
@@ -35473,8 +35563,8 @@
         } });
       }
       const block = place.list.blocks[place.index];
-      if (block?.type === "element" && block.kind === "person" && state.defs.some((d) => d.id === "card")) {
-        items.push({ label: t("codex.personToEntry"), action: () => personToEntry(place) });
+      if (block?.type === "element" && block.kind !== "card" && state.defs.some((d) => d.id === "card") && codex.types.some((x2) => x2.card === block.kind)) {
+        items.push({ label: t("codex.toEntry"), action: () => convertToCodex(place) });
       }
       if (isSubHeading(block)) {
         if (visual.canRaise(place)) items.push({ label: t("editor.raise"), action: () => visual.changeLevel(place, -1), shortcut: "Shift+Tab" });
@@ -35493,23 +35583,164 @@
     showPopup(contextAt, items);
   }
   async function personToEntry(place) {
-    const block = place.list.blocks[place.index];
-    const f = block.fields ?? {};
-    const fields = { mood: f.mood, description: f.description };
-    if (Array.isArray(f.links)) fields["linked-to"] = f.links;
-    const reply = await call("createEntry", JSON.stringify({ type: "person", title: inlineName(String(f.name ?? "")), fields }));
-    if (!reply?.ok) {
-      if (reply?.error) showMessage(reply.error);
+    await flush();
+    await convertWith(visual.pathOf(place), "person", null);
+  }
+  async function convertToCodex(place) {
+    if (state.info?.readOnly) {
+      showMessage(t("codex.readOnly"));
       return;
     }
-    state.worldMarks.push(state.historyPos);
-    await loadCodex();
-    visual.replaceBlock(place, { type: "element", kind: "card", fields: { entry: reply.id }, body: isDoc(block.body) ? block.body : { blocks: [], trail: "\n" } });
-    visual.render();
-    flashStatus(t("codex.entryCreated", { title: reply.title }));
+    await flush();
+    const path = visual.pathOf(place);
+    const info2 = await call("convertInfo", JSON.stringify({ chapter: state.chapterIndex, path }));
+    if (!info2?.ok) {
+      showMessage(info2?.error || t("error.codex.failed"));
+      return;
+    }
+    if (!info2.types.length) {
+      showMessage(t("error.codex.cannotConvert"));
+      return;
+    }
+    let type = info2.types[0];
+    if (info2.types.length > 1) {
+      const chosen = await new Promise((resolve2) => {
+        showPopup(contextAt, [
+          { label: t("codex.convertWhichType", { name: type.title }), heading: true },
+          ...info2.types.map((x2) => ({ label: x2.name, action: () => resolve2(x2.id) }))
+        ]);
+      });
+      type = info2.types.find((x2) => x2.id === chosen);
+    }
+    let link = null;
+    if (type.taken.length) {
+      const taken = type.taken[0];
+      const answer = await ask(t("codex.convertTaken", { title: taken.title }), t("codex.convertLink"), t("codex.convertNew"), t("dialog.cancel"));
+      if (answer === "cancel") return;
+      if (answer === "yes") {
+        const lines = taken.differences.map((d) => t("codex.convertDiff", { label: d.label, card: d.card, entry: d.entry }));
+        const text = lines.length ? [t("codex.convertDiffers"), ...lines].join("\n") : t("codex.convertNoDiff");
+        if (await ask(text, t("codex.convertConfirmLink"), "", t("dialog.cancel")) !== "yes") return;
+        link = taken.id;
+      }
+    }
+    await convertWith(path, type.id, link);
   }
-  function inlineName(markup) {
-    return markup.replace(/\\(.)/g, "$1");
+  async function convertWith(path, type, link) {
+    const reply = await call("convertToEntry", JSON.stringify({ chapter: state.chapterIndex, path, type, link }));
+    if (!reply?.ok) {
+      showMessage(reply?.error || t("error.codex.failed"));
+      return;
+    }
+    await reloadAfterWorld();
+    state.worldMarks.push(state.historyPos);
+    flashStatus(t(link ? "codex.linked" : "codex.converted", { title: reply.title }));
+  }
+  function pickFromCodex(type, title, newLabel, looseLabel) {
+    return new Promise((resolve2) => {
+      const dialog = $6("pick-dialog");
+      $6("pick-title").textContent = title;
+      const input = $6("pick-search");
+      input.value = "";
+      input.placeholder = t("codex.pickSearch");
+      input.setAttribute("aria-label", t("codex.pickSearch"));
+      const list = $6("pick-list");
+      const entries = codex.entries.filter((e) => e.type === type);
+      const done = (answer) => {
+        dialog.close();
+        resolve2(answer);
+      };
+      const render2 = () => {
+        list.textContent = "";
+        const query = input.value.trim().toLowerCase();
+        const shown = entries.filter((e) => !query || e.title.toLowerCase().includes(query));
+        for (const e of shown) {
+          const li = document.createElement("li");
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "pick-item";
+          b.dataset.entry = e.id;
+          b.textContent = e.title;
+          b.addEventListener("click", () => done({ entry: e.id }));
+          li.append(b);
+          list.append(li);
+        }
+        if (!shown.length) {
+          const li = document.createElement("li");
+          li.className = "panel-empty";
+          li.textContent = t("codex.pickNone");
+          list.append(li);
+        }
+        return shown;
+      };
+      input.oninput = () => render2();
+      input.onkeydown = (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        const shown = render2();
+        if (shown.length) done({ entry: shown[0].id });
+      };
+      $6("pick-new").textContent = newLabel;
+      $6("pick-new").onclick = () => done({ make: true });
+      const loose = $6("pick-loose");
+      loose.classList.toggle("hidden", !looseLabel);
+      loose.textContent = looseLabel ?? "";
+      loose.onclick = () => done({ loose: true });
+      $6("pick-cancel").onclick = () => done(null);
+      dialog.oncancel = (e) => {
+        e.preventDefault();
+        done(null);
+      };
+      render2();
+      dialog.showModal();
+      input.focus();
+    });
+  }
+  function pickerType(kind) {
+    if (kind === "clue") return codex.types.some((x2) => x2.id === "clue") && state.defs.some((d) => d.id === "information") ? "clue" : null;
+    if (!state.defs.some((d) => d.id === "card")) return null;
+    const type = codex.types.find((x2) => x2.id === kind && x2.card === kind) ?? codex.types.find((x2) => x2.card === kind);
+    return type ? type.id : null;
+  }
+  async function insertFromCodex(kind, place) {
+    const type = pickerType(kind);
+    if (!type) return false;
+    const where = place ?? visual.focused();
+    const words = {
+      person: ["codex.pickPerson", "codex.newPerson", "codex.newPersonTitle"],
+      creature: ["codex.pickCreature", "codex.newCreature", "codex.newCreatureTitle"],
+      clue: ["codex.pickClue", "codex.newClue", "codex.newClueTitle"]
+    }[kind];
+    const answer = await pickFromCodex(type, t(words[0]), t(words[1]), kind === "clue" ? void 0 : t("codex.looseCard"));
+    if (!answer) return true;
+    if ("loose" in answer) {
+      visual.insert(kind, where);
+      return true;
+    }
+    let id2;
+    let made = false;
+    if ("make" in answer) {
+      const name = await ask2(t(words[2]), { label: t("codex.name") });
+      if (!name) return true;
+      await flush();
+      const reply = await call("createEntry", JSON.stringify({ type, title: name.text }));
+      if (!reply?.ok) {
+        showMessage(reply?.error || t("error.codex.failed"));
+        return true;
+      }
+      id2 = reply.id;
+      made = true;
+      await loadCodex();
+    } else {
+      id2 = answer.entry;
+    }
+    const block = kind === "clue" ? { ...visual.newBlock("information"), variant: "hint", fields: { clue: id2 }, body: "" } : { type: "element", kind: "card", fields: { entry: id2 }, body: { blocks: [], trail: "\n" } };
+    visual.insertBlock(block, where);
+    if (made) {
+      await flush();
+      state.worldMarks.push(state.historyPos);
+    }
+    return true;
   }
   var contextItems = [];
   var contextAt = { left: 0, top: 0 };
@@ -36372,6 +36603,7 @@
       },
       afterRender: () => spelling?.schedule(200),
       codexEntries: () => codex.entries,
+      typesWithCard: () => codex.types.filter((x2) => x2.card).map((x2) => x2.id),
       maps: () => codex.maps,
       createEntry: async (type, title) => {
         if (type && title) {
@@ -36683,6 +36915,16 @@
     personToEntry: (path) => {
       const found = visual.blockAt(path);
       if (found) return personToEntry(found.place);
+    },
+    // M6 part C4: Convert to codex entry and the pickers
+    convertToCodex: (path) => {
+      const found = visual.blockAt(path);
+      if (found) return convertToCodex(found.place);
+    },
+    insertFromCodex: (kind) => insertFromCodex(kind, visual.focused()),
+    focusBlock: (path) => {
+      const found = visual.blockAt(path);
+      if (found) visual.focusBlock(found.block);
     },
     offerUpgrade,
     reloadAfterWorld,

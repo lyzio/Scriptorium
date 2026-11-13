@@ -1,0 +1,14 @@
+{
+  "id": "c-ulrika",
+  "type": "person",
+  "fields": {
+    "name": "Ulrika",
+    "mood": "calm",
+    "how-to-play": "Speaks slowly and *never* looks at the river.",
+    "linked-to": [
+      "c-broken-oar"
+    ]
+  },
+  "folder": "People",
+  "tags": []
+}

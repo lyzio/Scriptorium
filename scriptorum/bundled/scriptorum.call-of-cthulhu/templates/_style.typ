@@ -333,6 +333,14 @@
   }
 })
 
+// F3 (M6 part C4): the small clue mark, a magnifying glass drawn as
+// vectors, beside the clue's name on an Information item. Decoration, so
+// screen readers skip it; the clue's name is read instead.
+#let clue-mark(color) = box(baseline: 0.1em, pdf.artifact(box(width: 0.62em, height: 0.62em, {
+  place(dx: 0em, dy: 0em, circle(radius: 0.21em, stroke: 0.85pt + color))
+  place(dx: 0.36em, dy: 0.36em, line(start: (0em, 0em), end: (0.24em, 0.24em), stroke: (paint: color, thickness: 1.3pt, cap: "round")))
+})))
+
 // A six-sided die drawn as vectors (F7.5). With no face it shows a blank
 // die; a success face is filled.
 #let die(face: none, size: 0.95em, success: false) = box(baseline: 0.15em, {
