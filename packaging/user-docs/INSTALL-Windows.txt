@@ -1,0 +1,38 @@
+Scriptorum for Windows
+======================
+
+What you need
+  64-bit Windows 10 (version 1809 or newer) or Windows 11. Nothing else:
+  Python, Qt and Typst are inside, and Scriptorum needs no internet
+  connection.
+
+Install
+  Run Scriptorum-<version>-windows-x64-setup.exe. It installs for you alone
+  and needs no administrator rights; choose "Install for all users" on the
+  first page if everyone on the computer should have it.
+
+"Windows protected your PC"
+  Scriptorum is free software and is not signed with a paid certificate, so
+  Windows SmartScreen asks you to confirm it. This is expected.
+    1. Click "More info".
+    2. Click "Run anyway".
+  Your browser may also ask whether to keep the download: choose Keep.
+
+After installing
+  Scriptorum is in the Start menu. .scav adventures open in Scriptorum and
+  .scmod modules offer to install when you double-click them, each with its
+  own icon.
+
+Update
+  Run the newer setup program. Your adventures, modules and settings are
+  kept (%APPDATA%\Scriptorum).
+
+Remove
+  Settings > Apps > Installed apps > Scriptorum > Uninstall. Your settings
+  and modules stay in %APPDATA%\Scriptorum until you delete that folder.
+
+Licence
+  Scriptorum is free software under the GNU GPL, version 3 or later. The
+  licences of every part inside are in Help > About Scriptorum. The source
+  code is in Scriptorum-<version>-source.zip, published beside the setup
+  program.

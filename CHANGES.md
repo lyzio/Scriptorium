@@ -1,61 +1,40 @@
-# Scriptorum M6-0.6.7 — Changes
+# Scriptorum M6-0.6.8 — Changes
 
-Base: **M6-0.6.6** (`main`, accepted and merged on 13 November 2026). This is part C5 of Milestone 6 (decided 13 November 2026): installing updates (F22) with signed update packs, the start-up step that runs a newer version from the author's folder, going back to the previous version, and the release script; and the two issues found in the project manager's tests of 0.6.6.
+Base: **M6-0.6.7** (`main`, accepted and merged on 13 November 2026). This build moves the packaging kit into the repository and builds the installers on GitHub (M6 part D, decided 13 November 2026). The app itself is unchanged apart from its version.
 
-- Download and install from Help ▸ Check for updates…, only when the author clicks it; the pack is checked and unpacked into the author's own folder for the next start
-- every update file and pack signed with the project's Ed25519 key (cryptography 48.0.1); the app uses nothing that is not signed
-- the start-up step: a newer verified version made for this Python, Qt and Typst runs from the author's folder; a version that fails to start is set aside and Scriptorum goes back by itself and says so; Help ▸ Go back to version X; only two versions kept
-- the built-in update address is the GitHub release address; Settings ▸ Application ▸ Updates ▸ Update address, https only; a signed update file may move the address
-- the release script, `tools/release.py`, and a hand-test tool, `tools/try_update.py`
-- releases made on GitHub: a release job signs with the key kept as the repository secret `UPDATE` when an accepted build's tag is pushed (decided 13 November 2026)
-- the project's public key is built in
-- paragraphs and headings fill the editor's width (issue #8)
-- a short block's ↑ ↓ + × menu is a 2 × 2 square and stays on top while the pointer is on it (issue #9)
+- the packaging kit in `packaging/`, as kit 1.0.2
+- the installers job: every tag `v<version>` builds the AppImage (Ubuntu 22.04), both .dmg files (macos-15, macos-15-intel) and the Windows setup program, and attaches them to the release; Run workflow builds test installers from any branch or tag
+- the kit takes the pinned versions from the app's `pyproject.toml`, and carries cryptography into the installed app (F22)
+- the kit's `--release` check reads the value of `UPDATE_URL`; before, it refused every build from 0.6.7 on
 
-Issues fixed: #8 (Fullscreen not fullscreening), #9 (Block menu problem).
+Issues fixed: none (no open issue was planned for this build).
 
-Every file not listed here is unchanged from M6-0.6.6.
+Every file not listed here is unchanged from M6-0.6.7.
 
 ## Added
 
 | File | Why |
 |---|---|
-| `scriptorum/boot.py` | The start-up step: chooses and runs a kept version or the installed one; a failed start goes back (F22.4, F22.5) |
-| `scriptorum/core/packs.py` | Update packs: safe unpacking, the signed file list, the runtime check, and the versions kept in the author's folder with `state.json` (F22, 9.7) |
-| `scriptorum/core/signing.py` | Ed25519 signatures on update files and packs (F22) |
-| `scriptorum/core/update_key.py` | The project's public key, made by the project manager with `tools/release.py keygen` (F22) |
-| `scriptorum/licences/parts/cryptography.txt` | cryptography's licence for About ▸ Under the hood (F9, section 7) |
-| `tools/release.py` | The release script: the key once, then the pack and the signed update file from the tagged commit of main; on GitHub the key comes from the secret and the note from the tag; never a pre-release (F22, D12) |
-| `.github/workflows/release.yml` | The release job on GitHub: signs with the repository secret `UPDATE` when a tag v<version> is pushed (F22) |
-| `tools/try_update.py` | Try the start-up step and Go back by hand with a throwaway key |
-| `tests/test_m6c5.py` | T-REL-04 to 08, T-UI-44 to 47 |
-| `tests/update_keys.py` | The tests' own signing keys |
+| `packaging/` | The packaging kit 1.0.1 as received from the project manager, changed as below (kit 1.0.2) |
+| `.github/workflows/installers.yml` | The installers job on GitHub (F10, M6 part D) |
+| `tests/test_m6d.py` | T-REL-09 |
+
+## Changed (inside `packaging/`, from kit 1.0.1)
+
+| File | Why |
+|---|---|
+| `packaging/build.py` | The pins come from the app's `pyproject.toml` (cryptography needed from 0.6.7); the release check reads `UPDATE_URL`'s value; the kit's own `work/` and `dist/` are never copied into the build's source |
+| `packaging/common/scriptorum.spec` | cryptography's code and package metadata go into the app (F22) |
+| `packaging/kit.json` | Kit 1.0.2; no pins of its own |
+| `packaging/README.md`, `packaging/docs/*.md` | The kit in the repository, on GitHub, and the pins from the app |
 
 ## Changed
 
 | File | Why |
 |---|---|
-| `scriptorum/core/updates.py` | UPDATE_URL is the GitHub release address; the update file must be signed; Download and install; the Update address in use; a moved address (F21, F22) |
-| `scriptorum/core/appsettings.py` | `update_address`, https only (F22) |
-| `scriptorum/core/about.py` | cryptography in Under the hood (F9) |
-| `scriptorum/app/bridge.py` | `installUpdate`, `setUpdateAddress`, `useMovedAddress`, `versionInfo`, `goBack`; a version reports that it started when its window is ready (F22) |
-| `scriptorum/app/main.py` | Reuses the application object when a failed version handed over to the installed one (F22.5) |
-| `scriptorum/__main__.py` | Runs the start-up step first; the build helper runs from the same version folder (F22) |
-| `scriptorum/bundled/scriptorum.en/strings/update.json`, `menu.json`, `settings.json`, `about.json` | The words of this build (F15) |
-| `scriptorum/ui/index.html`, `styles.css` | Download and install and the address in the update dialog; the Update address field; a wider update dialog; the 2 × 2 block menu (#9); no 100-character limit on paragraphs (#8) |
-| `ui-src/app.ts` | Download and install, the moved address, Help ▸ Go back to version, the start notice |
-| `ui-src/shell.ts` | The Update address field in Settings ▸ Application |
-| `ui-src/editor.ts` | The block menu stays on top while the pointer is on it (#9) |
-| `scriptorum/ui/dist/app.js` | Rebuilt |
-| `pyproject.toml` | Version 0.6.7; cryptography 48.0.1; the `scriptorum` command runs the start-up step |
-| `tests/conftest.py` | The tests trust their own key; no test starts a kept version |
-| `tests/test_m6c.py` | T-UI-32 signs its update files and asks the placeholder explicitly (the design changed: F22) |
-| `tests/test_m6c3.py` | T-UI-40 no longer expects paragraphs to stop at 100 characters (issue #8; T-UI-46 checks them) |
-| `tests/test_m6b.py` | T-UI-34 expects cryptography in Under the hood |
-| `tests/scenarios/run_use_scenarios.py` | The C5 steps: the Update address, Check for updates, Download and install, the full-width paragraph; the C1 step sets the placeholder itself, since the built-in address is now real |
-| `.gitignore` | `dist-release/` |
+| `.gitignore` | `packaging/work/`, `packaging/dist/` |
 | `README.md`, `TEST-REPORT.md`, `CHANGES.md` | This build |
-| `scriptorum/__init__.py`, `ui-src/package.json` | Version 0.6.7 |
+| `scriptorum/__init__.py`, `pyproject.toml`, `ui-src/package.json` | Version 0.6.8 |
 
 ## Deleted
 

@@ -1,0 +1,132 @@
+# The installers (design document F10, M6 part D; built on GitHub from
+# M6-0.6.8, decided 13 November 2026).
+#
+# Pushing a tag v<version> on main builds every installer at the same time on
+# GitHub's free standard machines, with the packaging kit in packaging/:
+#   Linux    AppImage        on Ubuntu 22.04 (so it also runs on older systems)
+#   macOS    .dmg            on macos-15 (Apple Silicon) and macos-15-intel (Intel)
+#   Windows  setup program   on Windows Server 2022
+# Each runs the kit's seven steps, smoke test included, and the results are
+# attached to the release v<version>, beside the signed update files (F22).
+#
+# Actions > Installers > Run workflow builds test installers from any branch
+# or tag, as downloads of the run. Tick "attach" (with a tag) to add them to
+# that tag's existing release, for example v0.6.7.
+name: Installers
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or tag to build (empty: the branch this runs on)"
+        required: false
+        default: ""
+      attach:
+        description: "Attach the installers to the release of that tag (it must exist)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-x86_64, os: ubuntu-22.04 }
+          - { name: macos-arm64, os: macos-15 }
+          - { name: macos-x86_64, os: macos-15-intel }
+          - { name: windows-x64, os: windows-2022 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - name: The packaging kit (this workflow's commit)
+        uses: actions/checkout@v4
+        with:
+          path: kit
+          persist-credentials: false
+
+      - name: The app to build
+        uses: actions/checkout@v4
+        with:
+          path: app
+          ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
+
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: The libraries Qt needs on Linux (the kit's list)
+        if: runner.os == 'Linux'
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y --no-install-recommends
+          libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1
+          libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libnss3 libnspr4 libxkbfile1
+          libxcomposite1 libxdamage1 libxrandr2 libxtst6 libxshmfence1 libxi6 libxfixes3
+          libgl1 libegl1 libgbm1 libasound2 libfontconfig1 libdbus-1-3
+
+      - name: Inno Setup 6
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Build (the kit's seven steps)
+        shell: bash
+        env:
+          FOR_RELEASE: ${{ github.event_name == 'push' }}
+        run: |
+          flags=""
+          if [ "$FOR_RELEASE" = "true" ]; then flags="--release"; fi
+          python kit/packaging/build.py app --out out $flags
+
+      - name: Keep the results as downloads of this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Scriptorum-${{ matrix.name }}
+          path: out/
+          if-no-files-found: error
+
+  attach:
+    name: Attach to the release
+    needs: build
+    if: github.event_name == 'push' || inputs.attach
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: The results of every build
+        uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Attach them, once the release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.ref }}
+        run: |
+          case "$TAG" in
+            v[0-9]*) ;;
+            *) echo "Attaching needs a tag such as v0.6.7, not '$TAG'." >&2; exit 1 ;;
+          esac
+          for attempt in $(seq 1 40); do
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+              gh release upload "$TAG" out/* --clobber --repo "$GITHUB_REPOSITORY"
+              exit 0
+            fi
+            echo "The release $TAG does not exist yet (the release job makes it); waiting."
+            sleep 30
+          done
+          echo "The release $TAG was not made within 20 minutes; the installers are kept as downloads of this run." >&2
+          exit 1

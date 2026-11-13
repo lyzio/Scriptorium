@@ -1,10 +1,18 @@
-# Scriptorum — M6-0.6.7 (Milestone 6: Modules and release, part C5)
+# Scriptorum — M6-0.6.8 (Milestone 6: Modules and release, part D on GitHub)
 
-Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1, C2, C3, C4 and C5 of Milestone 6** of the design document (section 10).
+Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1 to C5 of Milestone 6, and the installers of part D built on GitHub** of the design document (section 10).
 
 Licence: GPL-3.0-or-later (see `COPYING`).
 
-## What M6 part C5 adds
+## What 0.6.8 adds: installers built on GitHub (M6 part D)
+
+- **The packaging kit is in the repository,** in `packaging/` (kit 1.0.2). Its README says how to build an installer by hand on each platform, as before; you can now point it at this folder itself.
+- **Every tag builds every installer.** Pushing a tag `v<version>` on main runs `.github/workflows/installers.yml`: the AppImage on Ubuntu 22.04, the .dmg for Apple Silicon (macos-15) and for Intel Macs (macos-15-intel), and the Windows setup program, each with the kit's own seven steps and smoke test. They are attached to the release v<version>, beside the signed update files of the release job. GitHub's standard machines are free for a public repository.
+- **Test installers from any branch or tag:** Actions ▸ Installers ▸ Run workflow. The results are downloads of that run; tick "attach" with a tag to add them to that tag's release (this is how v0.6.7 gets its installers).
+- **The kit always uses the app's own pins.** It reads PySide6, typst, spylls and cryptography from this `pyproject.toml` and installs exactly those, so it can never fall out of step with an app version. cryptography and its package metadata now go into the installed app, so updates (F22) work there.
+- **Fixed in the kit:** `--release` refused every build from 0.6.7 on, because it found the placeholder text in `updates.py`, where it stays as a constant; it now checks the value of `UPDATE_URL`.
+
+## What M6 part C5 added
 
 - **Download and install (F22).** When Help ▸ Check for updates… finds a newer version made for this app's Python, Qt and Typst, it offers Download and install beside the download page. Nothing is downloaded until you click. The pack is checked (size, checksum and the project's signature) and unpacked into your own Scriptorum folder, in `app-versions/`, and the window says "Ready. The update is installed the next time Scriptorum starts." Open adventures are not interrupted, and the installed app itself is never changed. A version that needs a newer Python, Qt or Typst says "This version needs a new installer" and offers only the download page.
 - **Signed updates (F22).** Every update file and every pack is signed with the project's private Ed25519 key, which is kept outside the app and the repository; the app holds the public key in `scriptorum/core/update_key.py` and uses nothing that is not signed with it. The signature library is cryptography 48.0.1 (Apache-2.0 OR BSD-3-Clause), the newest version that still runs on Intel Macs with macOS 12. **The project's key** was made by the project manager on 13 November 2026: its public key is built in, and the private key is kept outside the repository and as the GitHub secret `UPDATE`.

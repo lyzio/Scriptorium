@@ -1,0 +1,45 @@
+Scriptorum for macOS
+====================
+
+What you need
+  macOS 12 (Monterey) or newer. Use the download for your Mac:
+    ...-macos-arm64.dmg    Macs with Apple silicon (M1 and later)
+    ...-macos-x86_64.dmg   Macs with an Intel processor
+  Nothing else: Python, Qt and Typst are inside the app, and Scriptorum needs
+  no internet connection.
+
+Install
+  1. Open the .dmg.
+  2. Drag Scriptorum onto the Applications folder.
+  3. Eject the .dmg.
+
+The first start: "Apple could not verify Scriptorum..."
+  Scriptorum is free software and is not signed with a paid Apple
+  certificate, so macOS asks you to confirm it once. This is expected.
+
+  macOS 15 (Sequoia) and newer:
+    1. Double-click Scriptorum. A message says it cannot be verified.
+       Click Done (not Move to Bin).
+    2. Open System Settings > Privacy & Security, scroll down to Security.
+    3. Next to "Scriptorum was blocked...", click Open Anyway, and confirm
+       with your password.
+  macOS 12 to 14:
+    Right-click (or Control-click) Scriptorum in Applications, choose Open,
+    and click Open in the message.
+
+  After that, Scriptorum starts normally. .scav adventures and .scmod modules
+  open in Scriptorum when you double-click them.
+
+Update
+  Drag the newer Scriptorum onto Applications and choose Replace. Your
+  adventures, modules and settings are kept
+  (~/Library/Application Support/Scriptorum).
+
+Remove
+  Drag Scriptorum from Applications to the Bin. Your settings and modules
+  stay in ~/Library/Application Support/Scriptorum until you delete it.
+
+Licence
+  Scriptorum is free software under the GNU GPL, version 3 or later. The
+  licences of every part inside are in Help > About Scriptorum. The source
+  code is in Scriptorum-<version>-source.zip, published beside the .dmg.

@@ -1,0 +1,40 @@
+Scriptorum for Linux
+====================
+
+What you need
+  A 64-bit Linux desktop from about 2022 or later (Ubuntu 22.04, Debian 12,
+  Fedora 38, Linux Mint 21 or newer). Nothing else: Python, Qt and Typst are
+  inside the AppImage, and Scriptorum needs no internet connection.
+
+Start it
+  1. Save Scriptorum-<version>-linux-x86_64.AppImage where you keep programs,
+     for example a folder "Applications" in your home folder.
+  2. Make it runnable: right-click it, Properties, Permissions, tick
+     "Allow executing file as program". Or in a terminal:
+         chmod +x Scriptorum-*.AppImage
+  3. Double-click it.
+
+  The first time, Scriptorum offers to add itself to the applications menu
+  and to open .scav adventures and .scmod modules when you double-click them.
+
+If it does not start
+  Start it from a terminal to read the message:
+      ./Scriptorum-<version>-linux-x86_64.AppImage
+  "FUSE" or "fusermount" in the message: install FUSE
+      Ubuntu/Debian: sudo apt install fuse3
+      Fedora:        sudo dnf install fuse3
+  or start it without FUSE:
+      ./Scriptorum-<version>-linux-x86_64.AppImage --appimage-extract-and-run
+
+Update
+  Download the newer AppImage and use it instead of the old one. Your
+  adventures, modules and settings are kept (~/.local/share/scriptorum).
+
+Remove
+  Delete the AppImage. Your settings and modules stay in
+  ~/.local/share/scriptorum until you delete that folder.
+
+Licence
+  Scriptorum is free software under the GNU GPL, version 3 or later. The
+  licences of every part inside are in Help > About Scriptorum. The source
+  code is in Scriptorum-<version>-source.zip, published beside this file.

@@ -8,3 +8,5 @@ dist/
 !scriptorum/ui/dist/
 scenario-output/
 dist-release/
+packaging/work/
+packaging/dist/
