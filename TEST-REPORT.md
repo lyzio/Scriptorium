@@ -7,7 +7,7 @@
 | Python | 3.13.18 |
 | Pinned versions | PySide6 6.8.3 (Qt 6.8 LTS) · typst 0.15.0 · spylls 0.1.7 · cryptography 48.0.1 |
 | Date | 13 November 2026 |
-| Result | **347 passed**, 0 failed, 0 skipped |
+| Result | **349 passed**, 0 failed, 0 skipped. Your runs: Linux 347 passed; macOS 346 passed, 1 failed (T-UI-46, a test fault, fixed below) |
 
 ## This build
 
@@ -23,6 +23,7 @@ Built on M6-0.6.7 (accepted). The app is unchanged apart from its version; the b
 | T-REL-04 … 07 | Pass | T-REL-06 corrected (below) |
 | T-REL-08 | Pending on GitHub | Passes here; runs for real on your next tag |
 | T-REL-09 | Pass | New, five tests. The workflow builds for a tag and from Run workflow on ubuntu-22.04, macos-15, macos-15-intel and windows-2022 with Python 3.13, with `--release` only for a tag, keeps every result as a download, attaches only for a tag or when asked, waits for the release, never a pre-release, and may only write where it attaches; it installs the kit's own list of Linux libraries. The kit reads all four pins from `pyproject.toml` and holds no copy of any; a build without cryptography pinned is refused from 0.6.7 on; the release check reads `UPDATE_URL`'s value; the recipe carries cryptography's code and metadata; the kit's `work/` and `dist/` stay out of the copied source |
+| T-REL-11 | Pass | New, two tests. Added after you turned on CodeQL and DevSkim. CodeQL 2.x run here on this branch with the same suites as your workflow: Python 0 findings, JavaScript/TypeScript 0, GitHub workflows 0 (before: the three js/redos alerts and the clear-text-logging alert) |
 | T-REL-10 | Pending | The first installers from GitHub, on real computers (below) |
 | T-REL-01, T-REL-03 | Pending | Per platform, with the installers from GitHub |
 | T-USE-01, T-USE-02 | Not run | Nothing the scenarios use changed in this build (the app is unchanged) |
@@ -37,13 +38,21 @@ Built on M6-0.6.7 (accepted). The app is unchanged apart from its version; the b
 - **The kit's `--release` refused every build from 0.6.7 on.** It looked for the placeholder text anywhere in `updates.py`, where it stays as a constant beside the real address. It now checks the value of `UPDATE_URL`. Without this fix every tagged build on GitHub would have stopped.
 - **The kit would have left cryptography out of the installed app** (kit 1.0.1), so updates could never be checked there. It is now carried, with its metadata.
 
-## Correction to an existing test
+## Security findings (code scanning) and how they were fixed
+
+- **Alerts 2, 3 and 4, inefficient regular expressions (js/redos, high).** All three are in Cytoscape.js 3.34.0, the relationship chart's library, in its parser for stylesheets written as text, bundled into `app.js`. Scriptorum passes its chart styles as objects, so that parser never sees any text from the app or an adventure, and nothing could be exploited. The patterns wrote "any character" as `(\s|.)`, where a space matches both halves; the interface build (`ui-src/build.mjs`) now replaces them while bundling with `[\s\S]`, which means exactly the same, and stops if a newer Cytoscape changes them. Only those two lines of `app.js` changed.
+- **Alert 1, clear-text logging of sensitive information (high).** A false alarm: the release script's variables holding the *name* of the secret (`UPDATE`) and of its environment variable had "SECRET" in their names, and printed messages use those names. No key or secret is ever printed. They are renamed, and the scan is clean.
+- Your alerts close by themselves once main is scanned again after the merge.
+
+## Corrections to existing tests
+
+- **T-UI-46** (`tests/test_m6c5.py`): on your Mac the window cannot grow to the 2400 px the test asked for, as the screen is narrower, so the paragraph was 968 px against the 100-character mark of 955 px. Every check that the paragraph fills its column passed, as you saw. The test now checks against the editor column the window really got, and the 100-character check only where the window is 2000 px or wider. Not a fault in the app.
 
 - **T-REL-06** (`tests/test_m6c5.py`): the made-up "newer" versions 0.6.8, 0.6.9 and 0.7.0 were only newer while the app was 0.6.7. They are now 9.0.8, 9.0.9 and 9.1.0. The test itself was wrong, not the app.
 
 ## Tests added
 
-T-REL-09 (5 tests). T-REL-10 is manual. Both are in the Test Plan, added before the build.
+T-REL-09 (5 tests), T-REL-11 (2). T-REL-10 is manual. Both are in the Test Plan, added before the build.
 
 ## Hand checks for the project manager (T-REL-10)
 

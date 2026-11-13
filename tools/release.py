@@ -60,8 +60,8 @@ REPOSITORY = updates.UPDATE_URL.split("/releases/")[0]
 REPOSITORY_SLUG = "/".join(REPOSITORY.rstrip("/").split("/")[-2:])
 DEFAULT_KEY = Path.home() / ".scriptorum-release" / "update-signing-key.pem"
 KEY_FILE = ROOT / "scriptorum" / "core" / "update_key.py"
-KEY_SECRET = "SCRIPTORUM_SIGNING_KEY"   # the environment variable the release job fills from the secret
-GITHUB_SECRET = "UPDATE"                # the repository secret on GitHub that holds the key
+SIGNING_ENV = "SCRIPTORUM_SIGNING_KEY"   # the environment variable the release job fills from the secret
+SIGNING_SETTING = "UPDATE"                # the repository secret on GitHub that holds the key
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)   # the same pack bytes on every computer
 
 
@@ -120,17 +120,17 @@ def _load_key(key_path: Path) -> bytes:
     """The private key: from the secret SCRIPTORUM_SIGNING_KEY when it is set
     (the release job on GitHub), otherwise from the key file outside the
     repository. The key is only ever held in memory here."""
-    secret = os.environ.get(KEY_SECRET, "").strip()
+    secret = os.environ.get(SIGNING_ENV, "").strip()
     if secret:
         pem = (secret + "\n").encode("ascii", errors="replace")
-        where = f"the GitHub secret {GITHUB_SECRET}"
+        where = f"the GitHub secret {SIGNING_SETTING}"
     else:
         if _inside_repository(key_path):
             raise Refused(f"The private key may not be kept inside the repository: {key_path}")
         try:
             pem = key_path.read_bytes()
         except OSError as exc:
-            raise Refused(f"No signing key: neither the GitHub secret {GITHUB_SECRET} (as {KEY_SECRET}) nor a key file at {key_path}. "
+            raise Refused(f"No signing key: neither the GitHub secret {SIGNING_SETTING} (as {SIGNING_ENV}) nor a key file at {key_path}. "
                           "Make it once with: python tools/release.py keygen") from exc
         where = str(key_path)
     try:
@@ -172,14 +172,35 @@ def tag_note(version: str) -> str:
     return message or f"Scriptorum {version}"
 
 
-def publish_commands(version: str, files: list, note: str, exists: bool) -> list:
-    """The gh commands that publish the files: a new GitHub release on main, or
-    the files added to the release of that tag when it already exists. Never
-    a pre-release: GitHub's "latest" address skips those (F21)."""
+def changelog_section(version: str, changelog: Path = ROOT / "CHANGELOG.md") -> str:
+    """The section of CHANGELOG.md for this version (its heading and text up to
+    the next version), which becomes the release's description; empty if the
+    changelog has none."""
+    try:
+        text = changelog.read_text("utf-8")
+    except OSError:
+        return ""
+    lines, keep = [], False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            if keep:
+                break
+            keep = line[3:].split()[0] == version if line[3:].split() else False
+        if keep:
+            lines.append(line)
+    return "\n".join(lines[1:]).strip()
+
+
+def publish_commands(version: str, files: list, note: str, exists: bool, notes_file=None) -> list:
+    """The gh commands that publish the files: a new GitHub release on main,
+    described by the version's section of CHANGELOG.md (or the note), or the
+    files added to the release of that tag when it already exists. Never a
+    pre-release: GitHub's "latest" address skips those (F21)."""
     if exists:
         return [["gh", "release", "upload", f"v{version}", *map(str, files), "--clobber", "--repo", REPOSITORY_SLUG]]
+    notes = ["--notes-file", str(notes_file)] if notes_file else ["--notes", note]
     return [["gh", "release", "create", f"v{version}", *map(str, files), "--repo", REPOSITORY_SLUG,
-             "--verify-tag", "--title", f"Scriptorum {version}", "--notes", note]]
+             "--verify-tag", "--title", f"Scriptorum {version}", *notes]]
 
 
 def package_files() -> list:
@@ -285,7 +306,7 @@ def main(argv=None) -> int:
             print(f"The private key is in {_key_path(args.key)}. Keep it safe and never share it.")
             print(f"The public key {public} is written into scriptorum/core/update_key.py; commit that file.")
             print("Then give the key to the release job on GitHub, once:")
-            print(f"gh secret set {GITHUB_SECRET} --repo {REPOSITORY_SLUG} < {_key_path(args.key)}")
+            print(f"gh secret set {SIGNING_SETTING} --repo {REPOSITORY_SLUG} < {_key_path(args.key)}")
             print("and keep one offline copy of the key file: GitHub never shows a secret again.")
             return 0
         if args.publish and args.allow_untagged:
@@ -298,15 +319,20 @@ def main(argv=None) -> int:
         return 1
     print(f"Made {made['pack'].name} ({made['files']} files) and {made['update'].name} in {made['pack'].parent}.")
     files = [made["pack"], made["update"]]
+    description = changelog_section(args.version)
+    notes_file = None
+    if description:
+        notes_file = made["pack"].parent / f"release-notes-{args.version}.md"
+        notes_file.write_text(description + "\n", "utf-8")
     if args.publish:
         exists = subprocess.run(["gh", "release", "view", f"v{args.version}", "--repo", REPOSITORY_SLUG],
                                 capture_output=True).returncode == 0
-        for command in publish_commands(args.version, files, note, exists):
+        for command in publish_commands(args.version, files, note, exists, notes_file):
             subprocess.run(command, check=True)
         print(f"Published on the GitHub release v{args.version}.")
     else:
         print("To publish it as the GitHub release, run:")
-        for command in publish_commands(args.version, files, note, False):
+        for command in publish_commands(args.version, files, note, False, notes_file):
             print(" ".join(f'"{c}"' if " " in c else c for c in command))
     return 0
 

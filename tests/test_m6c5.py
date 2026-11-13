@@ -489,7 +489,7 @@ def test_T_REL_08_release_job_on_github(tmp_path):
     assert new[0][:4] == ["gh", "release", "create", "v9.9.1"] and "--verify-tag" in new[0]
     assert again[0][:3] == ["gh", "release", "upload"] and "--clobber" in again[0]
     assert not any("prerelease" in part for command in new + again for part in command)
-    assert tool.REPOSITORY_SLUG == "lyzio/Scriptorum" and tool.GITHUB_SECRET == "UPDATE"
+    assert tool.REPOSITORY_SLUG == "lyzio/Scriptorum" and tool.SIGNING_SETTING == "UPDATE"
 
     version = "9.9.1"
     repo = _repo_copy(tmp_path, version)
@@ -788,7 +788,13 @@ def test_T_UI_46_paragraphs_fill_the_width(ui):
     measure("narrow")
     ui.window.resize(2400, 1000)
     para, hundred = measure("wide")
-    assert para > hundred * 1.1, (para, hundred)
+    # The paragraph fills the editor column the window really got: a screen
+    # narrower than 2400 px (a laptop) caps the window (found on macOS, 0.6.8).
+    column = ui.js("(() => { const v = document.getElementById('visual'); const s = getComputedStyle(v);"
+                   " return v.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); })()")
+    assert abs(_width(ui, top) - column) <= 2, (_width(ui, top), column)
+    if ui.window.width() >= 2000:
+        assert para > hundred * 1.1, (para, hundred)
     ui.run("window.__scriptorum.setPreview(false)")
     para_hidden, _ = measure("preview hidden")
     assert para_hidden > para

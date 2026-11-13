@@ -6,7 +6,7 @@
   "description": "Scriptorum interface (TypeScript). Built into scriptorum/ui/dist/app.js.",
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "esbuild app.ts preview-window.ts --bundle --format=iife --target=chrome110 --loader:.svg=text --outdir=../scriptorum/ui/dist",
+    "build": "node build.mjs",
     "build:test": "esbuild inline.ts --bundle --format=cjs --platform=node --outfile=../tests/js/inline.cjs"
   },
   "devDependencies": {

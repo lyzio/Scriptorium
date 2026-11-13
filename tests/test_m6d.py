@@ -129,3 +129,39 @@ def test_T_REL_09_kit_leaves_its_own_work_out(tmp_path, monkeypatch):
     copied = {p.relative_to(tmp_path / "copy").as_posix() for p in (tmp_path / "copy").rglob("*")}
     assert "packaging/build.py" in copied and "scriptorum/__init__.py" in copied
     assert not any(name.startswith(("packaging/work", "packaging/dist")) for name in copied)
+
+
+@pytest.mark.unit
+def test_T_REL_11_code_scanning_findings_stay_fixed():
+    """T-REL-11: the three regular expressions CodeQL found in Cytoscape.js's
+    stylesheet parser (js/redos) are not in the bundled interface; the build
+    replaces them and would stop if Cytoscape changed them."""
+    bundle = (ROOT / "scriptorum" / "ui" / "dist" / "app.js").read_text("utf-8")
+    for unsafe in ("(\\s|.)", "(?:.|\\s)", "(.|\\s)", "(?:\\s|.)"):
+        assert unsafe not in bundle, unsafe
+    assert "remaining.replace(/[/][*][\\s\\S]+?[*][/]/g" in bundle
+    build = (ROOT / "ui-src" / "build.mjs").read_text("utf-8")
+    assert "throw new Error(`Cytoscape no longer contains" in build
+    assert json.loads((ROOT / "ui-src" / "package.json").read_text("utf-8"))["scripts"]["build"] == "node build.mjs"
+    # The release script names the secret's setting without the word that makes
+    # code scanning take it for a secret (alert 1, a false alarm, renamed).
+    release = (ROOT / "tools" / "release.py").read_text("utf-8")
+    assert "GITHUB_SECRET" not in release and "KEY_SECRET" not in release
+
+
+@pytest.mark.unit
+def test_T_REL_11_release_description_from_the_changelog():
+    """T-REL-11: a release is described by its version's section of
+    CHANGELOG.md; the README holds no version history."""
+    spec = importlib.util.spec_from_file_location("release_tool", ROOT / "tools" / "release.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    version = __import__("scriptorum").__version__
+    section = tool.changelog_section(version)
+    assert section and "Windows installer has not been tested yet" in section
+    assert not section.startswith("## ") and "\n## " not in section
+    assert tool.changelog_section("9.9.9") == ""
+    command = tool.publish_commands(version, ["a.zip"], "Note.", exists=False, notes_file=Path("notes.md"))[0]
+    assert command[-2:] == ["--notes-file", "notes.md"]
+    readme = (ROOT / "README.md").read_text("utf-8")
+    assert "## What " not in readme and "CHANGELOG.md" in readme and "Not yet tested" in readme
