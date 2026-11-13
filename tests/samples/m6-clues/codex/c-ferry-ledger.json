@@ -1,0 +1,10 @@
+{
+  "id": "c-ferry-ledger",
+  "type": "clue",
+  "fields": {
+    "name": "The ferry ledger",
+    "description": "The last page of the ledger lists a crossing nobody paid for."
+  },
+  "folder": "Clues",
+  "tags": []
+}

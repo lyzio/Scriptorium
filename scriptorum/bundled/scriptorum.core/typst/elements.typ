@@ -48,6 +48,11 @@
 // F3.4: the codex card being laid out, so Information written inside it is
 // known by that entry automatically (11.3).
 #let card-open = state("scriptorum-card-open", none)
+// F3 (M6 part C4): a loose person card being laid out, by its number and
+// name, so a clue written inside it is listed on its Clues line and in the
+// clue overview.
+#let person-counter = counter("scriptorum-person")
+#let loose-open = state("scriptorum-loose-person", none)
 
 // F12 stage 1: an invisible mark with the element's kind and its position on
 // the page, so a click on a preview page can be traced to its element.
@@ -258,39 +263,83 @@
 
   // 11.3 Information: Secret (default), Public or Hint. It can be linked to
   // the people who know it; inside a codex card it is known by that entry.
-  let information(variant: "secret", known-by: (), ..args) = {
+  // F3 (M6 part C4): with a Clue it prints the clue's description, so the
+  // text is written once, with a small clue mark and the clue's name.
+  let information(variant: "secret", known-by: (), clue: none, ..args) = {
     if variant not in _variants {
       panic("SCRIPTORUM:variant:information:" + str(variant))
     }
     let body = args.pos().at(0, default: [])
+    let found = if _blank(clue) { none } else { entries.at(str(clue), default: none) }
+    let text = if found != none and not _blank(found.fields.at("description", default: none)) {
+      rich(found.fields.description)
+    } else { body }
     _mark("information")
     for k in known-by { _ref(k, "information.known-by") }
-    context [#metadata((known-by: known-by, inside: card-open.get(), variant: variant, summary: _summary(body)))<scriptorum-info>]
-    (r.information)((variant: variant, fill: secret-fill), body, labels)
+    if not _blank(clue) { _ref(clue, "information.clue") }
+    context [#metadata((known-by: known-by, inside: card-open.get(), loose: loose-open.get(), variant: variant,
+      summary: _summary(text), clue: if _blank(clue) { none } else { str(clue) },
+      clue-title: if _blank(clue) { none } else { entry-title(clue) }))<scriptorum-info>]
+    let f = (variant: variant, fill: secret-fill)
+    if not _blank(clue) { f.insert("clue", name-of(clue)) }
+    (r.information)(f, text, labels)
   }
 
   // The short lines on a person card for Information written elsewhere and
   // known by the person (11.4, T-WORLD-03).
   let known-elsewhere(id) = query(<scriptorum-info>)
     .filter(m => str(id) in m.value.known-by and m.value.inside != str(id))
-    .map(m => (variant: m.value.variant, summary: m.value.summary, page: _page-of(m.location()), target: m.location()))
+    .map(m => (variant: m.value.variant, summary: m.value.summary, page: _page-of(m.location()), target: m.location(),
+      clue: m.value.at("clue-title", default: none)))
+
+  // F3 (M6 part C4): where a clue is written in full: its first Information
+  // item, or else its first codex card.
+  let clue-target(id) = {
+    let found = query(<scriptorum-info>).filter(m => m.value.at("clue", default: none) == str(id))
+    if found.len() > 0 { found.first().location() } else { card-target(id) }
+  }
+
+  // 11.4 (M6 part C4): the Clues line of a person card: every clue connected
+  // to the person, through clue Information they know (or that is written in
+  // their card) or through Linked to, each once, with its page pointer.
+  let clues-of(entry, linked, loose) = {
+    let ids = ()
+    for m in query(<scriptorum-info>) {
+      let v = m.value
+      let c = v.at("clue", default: none)
+      if c == none { continue }
+      let known = (entry != none and (str(entry) in v.known-by or v.inside == str(entry))) or (loose != none and v.at("loose", default: none) == loose)
+      if known and c not in ids { ids.push(c) }
+    }
+    for l in linked {
+      let e = entries.at(str(l), default: none)
+      if e != none and e.type == "clue" and str(l) not in ids { ids.push(str(l)) }
+    }
+    ids.map(i => {
+      let target = clue-target(i)
+      (title: entry-title(i), target: target, page: if target == none { none } else { _page-of(target) })
+    })
+  }
 
   // 11.4 Person: the body holds the Information lines the person knows.
   // M6 part C: an optional portrait (JPEG or PNG) with its description for
   // screen readers (F17.3); the theme prints it in the card's corner.
-  let person(name: none, mood: none, description: none, portrait: none, portrait-description: none, linked-to: none, links: (), ..args) = {
+  // M6 part C4: How to play, printed under Mood, and the Clues line.
+  let person(name: none, mood: none, how-to-play: none, description: none, portrait: none, portrait-description: none, linked-to: none, links: (), ..args) = {
     _required("person", "name", name)
     let body = args.pos().at(0, default: none)
     _mark("person")
     let linked = links.map(l => { _ref(l, "person.links"); name-of(l) }) + if _blank(linked-to) { () } else { (linked-to,) }
-    (r.person)(
-      (name: name, mood: mood, description: description,
+    person-counter.step()
+    context loose-open.update((number: person-counter.get().first(), name: name))
+    let f = (name: name, mood: mood, description: description,
         portrait: if _blank(portrait) { none } else { portrait },
         portrait-description: portrait-description,
-        linked-to: if linked.len() == 0 { none } else { linked.join(", ") }),
-      body,
-      labels,
-    )
+        linked-to: if linked.len() == 0 { none } else { linked.join(", ") },
+        clues: () => clues-of(none, links, loose-open.get()))
+    if not _blank(how-to-play) { f.insert("how-to-play", how-to-play) }
+    (r.person)(f, body, labels)
+    loose-open.update(none)
   }
 
   // 11.5 Creature: the game system's stat block decides the stats and the
@@ -346,6 +395,9 @@
   let card(entry: none, ..args) = {
     _required("card", "entry", entry)
     let body = args.pos().at(0, default: none)
+    // F3 (M6 part C4): fields its codex type lacks stay on the card, as they
+    // were written, and print as before.
+    let own = args.named()
     let e = entries.at(entry, default: none)
     _mark("card")
     [#metadata((id: entry))#label("scriptorum-card-" + entry)]
@@ -355,26 +407,34 @@
     let fields = e.fields
     card-open.update(entry)
     if t.card == "person" {
-      let linked = fields.at("linked-to", default: ()).map(l => { _ref(l, "person.links"); name-of(l) })
-      (r.person)(
-        (
+      let pick(key) = { let v = fields.at(key, default: none); if _blank(v) { own.at(key, default: none) } else { v } }
+      let pick-rich(key) = { let v = fields.at(key, default: none); if _blank(v) { own.at(key, default: none) } else { rich(v) } }
+      let link-ids = fields.at("linked-to", default: ()) + own.at("links", default: ())
+      let linked = link-ids.map(l => { _ref(l, "person.links"); name-of(l) })
+      let legacy = own.at("linked-to", default: none)
+      if type(legacy) != array and not _blank(legacy) { linked.push(legacy) }
+      let f = (
           name: e.title,
-          mood: fields.at("mood", default: none),
-          description: rich(fields.at("description", default: none)),
+          mood: pick("mood"),
+          description: pick-rich("description"),
           // 11.4 (M6 part C): the portrait follows the person into every card.
-          portrait: if _blank(fields.at("portrait", default: none)) { none } else { fields.portrait },
-          portrait-description: fields.at("portrait-description", default: none),
+          portrait: if _blank(pick("portrait")) { none } else { pick("portrait") },
+          portrait-description: pick("portrait-description"),
           linked-to: if linked.len() == 0 { none } else { linked.join(", ") },
           known: () => known-elsewhere(entry),
-        ),
-        body,
-        labels,
-      )
+          clues: () => clues-of(entry, link-ids, none),
+        )
+      let how = pick-rich("how-to-play")
+      if not _blank(how) { f.insert("how-to-play", how) }
+      (r.person)(f, body, labels)
     } else if t.card == "creature" {
       let named = (:)
       for (key, value) in fields {
         if key == "name" { continue }
         named.insert(key, if type(value) == str and key not in ("type", "stat-lines") { rich(value) } else { value })
+      }
+      for (key, value) in own {
+        if key not in named { named.insert(key, value) }
       }
       (r.creature)(creature-fields(e.title, named), none, labels)
     } else {
@@ -563,7 +623,19 @@
         let item = (number: number, title: title)
         if item not in scenes { scenes.push(item) }
       }
-      (title: e.title, description: rich(e.fields.at("description", default: none)), scenes: scenes)
+      // F3 (M6 part C4): who knows the clue, each once.
+      let knowers = ()
+      for m in query(<scriptorum-info>).filter(m => m.value.at("clue", default: none) == e.id) {
+        let names = m.value.known-by.map(k => entry-title(k))
+        if m.value.inside != none { names.push(entry-title(m.value.inside)) }
+        let loose = m.value.at("loose", default: none)
+        if loose != none { names.push(loose.name) }
+        for n in names { if n not in knowers { knowers.push(n) } }
+      }
+      for p in entries.values() {
+        if e.id in p.fields.at("linked-to", default: ()) and p.title not in knowers { knowers.push(p.title) }
+      }
+      (title: e.title, description: rich(e.fields.at("description", default: none)), scenes: scenes, known-by: knowers)
     })
     (r.end-clues)((items: items), none, labels)
   }

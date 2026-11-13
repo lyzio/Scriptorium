@@ -12,6 +12,15 @@
       ],
       "required": false,
       "label": "field.information.known-by"
+    },
+    {
+      "name": "clue",
+      "kind": "codex",
+      "types": [
+        "clue"
+      ],
+      "required": false,
+      "label": "field.information.clue"
     }
   ],
   "variants": [

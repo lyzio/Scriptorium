@@ -281,6 +281,18 @@
   </form>
 </dialog>
 
+<!-- F3 (M6 part C4): pick a codex person, creature or clue when inserting one -->
+<dialog id="pick-dialog" class="dialog">
+  <h2 id="pick-title"></h2>
+  <input id="pick-search" class="pick-search" type="search" autocomplete="off">
+  <ul id="pick-list" class="pick-list"></ul>
+  <div class="dialog-actions pick-actions">
+    <button id="pick-new" type="button"></button>
+    <button id="pick-loose" type="button"></button>
+    <button id="pick-cancel" type="button" data-i18n="dialog.cancel"></button>
+  </div>
+</dialog>
+
 <dialog id="upgrade-dialog" class="dialog wide">
   <h2 data-i18n="upgrade.title"></h2>
   <p data-i18n="upgrade.text"></p>

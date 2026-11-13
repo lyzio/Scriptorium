@@ -23,5 +23,6 @@
   "editor": "form",
   "codex_ref": "card",
   "renderer": false,
-  "toolbar_group": "people"
+  "toolbar_group": "people",
+  "keeps_extra_fields": true
 }

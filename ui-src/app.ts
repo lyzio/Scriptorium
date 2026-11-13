@@ -628,6 +628,8 @@ function insertItems(kinds?: string[], onPick?: (kind: string) => void): MenuIte
       seenGroups.add(def.shortcutGroup);
     }
     items.push({ label: def.name, action: () => pick(def.id), shortcut });
+    // F3 (M6 part C4): Insert ▸ Clue adds a clue as Information.
+    if (def.id === "information" && pickerType("clue")) items.push({ label: t("menu.insertClue"), action: () => pick("clue") });
   }
   for (const kind of ["table", "image"]) {
     if (allowed.includes(kind)) items.push({ label: kindLabel(kind), action: () => pick(kind) });
@@ -1028,6 +1030,7 @@ async function insert(kind: string, place?: Place | null, variant?: string): Pro
     if (result?.ok) visual.insertBlock({ type: "image", path: result.path }, place ?? undefined);
     return;
   }
+  if ((kind === "person" || kind === "creature" || kind === "clue") && await insertFromCodex(kind, place)) return;
   const def = state.defs.find((d) => d.id === kind);
   if (def?.codexRef === "mention" || def?.codexRef === "see") {
     // F3.4: choose the entry, then it goes into the sentence as a chip.
@@ -1153,8 +1156,11 @@ function openContextMenu(event: MouseEvent, place: Place): void {
       } });
     }
     const block = place.list.blocks[place.index];
-    if (block?.type === "element" && block.kind === "person" && state.defs.some((d) => d.id === "card")) {
-      items.push({ label: t("codex.personToEntry"), action: () => personToEntry(place) });
+    // F3 (M6 part C4): Convert to codex entry, on every block whose kind is
+    // the card element of a codex type; a codex card does not offer it.
+    if (block?.type === "element" && block.kind !== "card" && state.defs.some((d) => d.id === "card") &&
+        codex.types.some((x) => x.card === block.kind)) {
+      items.push({ label: t("codex.toEntry"), action: () => convertToCodex(place) });
     }
     // F4 (M6 part C): Raise and Lower a sub-heading, one level at a time;
     // Lower only where it would not skip a level.
@@ -1176,26 +1182,189 @@ function openContextMenu(event: MouseEvent, place: Place): void {
   showPopup(contextAt, items);
 }
 
-/** F3.7: a loose person card becomes a codex entry and a codex card. */
+/** F3.7: a loose person card becomes a codex entry and a codex card (a new
+ * Person entry, with no questions; used by the tests). */
 async function personToEntry(place: Place): Promise<void> {
-  const block = place.list.blocks[place.index];
-  const f = block.fields ?? {};
-  const fields: Record<string, unknown> = { mood: f.mood, description: f.description };
-  if (Array.isArray(f.links)) fields["linked-to"] = f.links;
-  const reply = await call("createEntry", JSON.stringify({ type: "person", title: inlineName(String(f.name ?? "")), fields }));
-  if (!reply?.ok) {
-    if (reply?.error) showMessage(reply.error);
-    return;
-  }
-  state.worldMarks.push(state.historyPos);
-  await loadCodex();
-  visual.replaceBlock(place, { type: "element", kind: "card", fields: { entry: reply.id }, body: isDoc(block.body) ? block.body : { blocks: [], trail: "\n" } });
-  visual.render();
-  flashStatus(t("codex.entryCreated", { title: reply.title }));
+  await flush();
+  await convertWith(visual.pathOf(place), "person", null);
 }
 
-function inlineName(markup: string): string {
-  return markup.replace(/\\(.)/g, "$1");
+/** F3 (M6 part C4): Convert to codex entry, everywhere it fits. Asks for the
+ * type when several fit, and whether to link to an entry of the same name;
+ * the entry and the card change together, as one undo step. */
+async function convertToCodex(place: Place): Promise<void> {
+  if (state.info?.readOnly) {
+    showMessage(t("codex.readOnly"));
+    return;
+  }
+  await flush();
+  const path = visual.pathOf(place);
+  const info = await call("convertInfo", JSON.stringify({ chapter: state.chapterIndex, path }));
+  if (!info?.ok) {
+    showMessage(info?.error || t("error.codex.failed"));
+    return;
+  }
+  if (!info.types.length) {
+    showMessage(t("error.codex.cannotConvert"));
+    return;
+  }
+  let type = info.types[0];
+  if (info.types.length > 1) {
+    const chosen = await new Promise<string>((resolve) => {
+      showPopup(contextAt, [
+        { label: t("codex.convertWhichType", { name: type.title }), heading: true },
+        ...info.types.map((x: any) => ({ label: x.name, action: () => resolve(x.id) })),
+      ]);
+    });
+    type = info.types.find((x: any) => x.id === chosen);
+  }
+  let link: string | null = null;
+  if (type.taken.length) {
+    const taken = type.taken[0];
+    const answer = await askChoice(t("codex.convertTaken", { title: taken.title }), t("codex.convertLink"), t("codex.convertNew"), t("dialog.cancel"));
+    if (answer === "cancel") return;
+    if (answer === "yes") {
+      const lines = taken.differences.map((d: any) => t("codex.convertDiff", { label: d.label, card: d.card, entry: d.entry }));
+      const text = lines.length ? [t("codex.convertDiffers"), ...lines].join("\n") : t("codex.convertNoDiff");
+      if (await askChoice(text, t("codex.convertConfirmLink"), "", t("dialog.cancel")) !== "yes") return;
+      link = taken.id;
+    }
+  }
+  await convertWith(path, type.id, link);
+}
+
+async function convertWith(path: number[], type: string, link: string | null): Promise<void> {
+  const reply = await call("convertToEntry", JSON.stringify({ chapter: state.chapterIndex, path, type, link }));
+  if (!reply?.ok) {
+    showMessage(reply?.error || t("error.codex.failed"));
+    return;
+  }
+  await reloadAfterWorld();
+  // The core changed the codex and the text together: one undo step.
+  state.worldMarks.push(state.historyPos);
+  flashStatus(t(link ? "codex.linked" : "codex.converted", { title: reply.title }));
+}
+
+// --- F3 (M6 part C4): pick a codex person, creature or clue when inserting one --------
+
+type Picked = { entry: string } | { make: true } | { loose: true } | null;
+
+/** The picker: the codex's entries of one type at the top, narrowed by
+ * typing, then New…, then (for people and creatures) Write a loose card here. */
+function pickFromCodex(type: string, title: string, newLabel: string, looseLabel?: string): Promise<Picked> {
+  return new Promise((resolve) => {
+    const dialog = $<HTMLDialogElement>("pick-dialog");
+    $("pick-title").textContent = title;
+    const input = $<HTMLInputElement>("pick-search");
+    input.value = "";
+    input.placeholder = t("codex.pickSearch");
+    input.setAttribute("aria-label", t("codex.pickSearch"));
+    const list = $("pick-list");
+    const entries = codex.entries.filter((e) => e.type === type);
+    const done = (answer: Picked) => {
+      dialog.close();
+      resolve(answer);
+    };
+    const render = () => {
+      list.textContent = "";
+      const query = input.value.trim().toLowerCase();
+      const shown = entries.filter((e) => !query || e.title.toLowerCase().includes(query));
+      for (const e of shown) {
+        const li = document.createElement("li");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pick-item";
+        b.dataset.entry = e.id;
+        b.textContent = e.title;
+        b.addEventListener("click", () => done({ entry: e.id }));
+        li.append(b);
+        list.append(li);
+      }
+      if (!shown.length) {
+        const li = document.createElement("li");
+        li.className = "panel-empty";
+        li.textContent = t("codex.pickNone");
+        list.append(li);
+      }
+      return shown;
+    };
+    input.oninput = () => render();
+    input.onkeydown = (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const shown = render();
+      if (shown.length) done({ entry: shown[0].id });
+    };
+    $("pick-new").textContent = newLabel;
+    $("pick-new").onclick = () => done({ make: true });
+    const loose = $("pick-loose");
+    loose.classList.toggle("hidden", !looseLabel);
+    loose.textContent = looseLabel ?? "";
+    loose.onclick = () => done({ loose: true });
+    $("pick-cancel").onclick = () => done(null);
+    dialog.oncancel = (e) => {
+      e.preventDefault();
+      done(null);
+    };
+    render();
+    dialog.showModal();
+    input.focus();
+  });
+}
+
+/** The codex type a person card or creature shows: Person, Creature. */
+function pickerType(kind: string): string | null {
+  if (kind === "clue") return codex.types.some((x) => x.id === "clue") && state.defs.some((d) => d.id === "information") ? "clue" : null;
+  if (!state.defs.some((d) => d.id === "card")) return null;
+  const type = codex.types.find((x) => x.id === kind && x.card === kind) ?? codex.types.find((x) => x.card === kind);
+  return type ? type.id : null;
+}
+
+/** Insert ▸ Person, Creature and Clue (F3, M6 part C4). Returns false when
+ * the codex has no such type, so the plain insert happens instead. */
+async function insertFromCodex(kind: "person" | "creature" | "clue", place?: Place | null): Promise<boolean> {
+  const type = pickerType(kind);
+  if (!type) return false;
+  const where = place ?? visual.focused();
+  const words = {
+    person: ["codex.pickPerson", "codex.newPerson", "codex.newPersonTitle"],
+    creature: ["codex.pickCreature", "codex.newCreature", "codex.newCreatureTitle"],
+    clue: ["codex.pickClue", "codex.newClue", "codex.newClueTitle"],
+  }[kind];
+  const answer = await pickFromCodex(type, t(words[0]), t(words[1]), kind === "clue" ? undefined : t("codex.looseCard"));
+  if (!answer) return true;
+  if ("loose" in answer) {
+    visual.insert(kind, where);
+    return true;
+  }
+  let id: string;
+  let made = false;
+  if ("make" in answer) {
+    const name = await ask(t(words[2]), { label: t("codex.name") });
+    if (!name) return true;
+    await flush();
+    const reply = await call("createEntry", JSON.stringify({ type, title: name.text }));
+    if (!reply?.ok) {
+      showMessage(reply?.error || t("error.codex.failed"));
+      return true;
+    }
+    id = reply.id;
+    made = true;
+    await loadCodex();
+  } else {
+    id = answer.entry;
+  }
+  const block: Block = kind === "clue"
+    ? { ...visual.newBlock("information"), variant: "hint", fields: { clue: id }, body: "" }
+    : { type: "element", kind: "card", fields: { entry: id }, body: { blocks: [], trail: "\n" } };
+  visual.insertBlock(block, where);
+  if (made) {
+    // The new entry and its card are one undo step: Undo brings back the
+    // codex and the text as they were before.
+    await flush();
+    state.worldMarks.push(state.historyPos);
+  }
+  return true;
 }
 
 let contextItems: MenuItem[] = [];
@@ -2180,6 +2349,7 @@ async function boot(): Promise<void> {
     },
     afterRender: () => spelling?.schedule(200),
     codexEntries: () => codex.entries,
+    typesWithCard: () => codex.types.filter((x) => x.card).map((x) => x.id),
     maps: () => codex.maps,
     createEntry: async (type, title) => {
       if (type && title) {
@@ -2496,6 +2666,16 @@ async function boot(): Promise<void> {
   personToEntry: (path: number[]) => {
     const found = visual.blockAt(path);
     if (found) return personToEntry(found.place);
+  },
+  // M6 part C4: Convert to codex entry and the pickers
+  convertToCodex: (path: number[]) => {
+    const found = visual.blockAt(path);
+    if (found) return convertToCodex(found.place);
+  },
+  insertFromCodex: (kind: "person" | "creature" | "clue") => insertFromCodex(kind, visual.focused()),
+  focusBlock: (path: number[]) => {
+    const found = visual.blockAt(path);
+    if (found) visual.focusBlock(found.block);
   },
   offerUpgrade,
   reloadAfterWorld,

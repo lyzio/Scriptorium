@@ -79,5 +79,10 @@
   "build.crashed": "The last build stopped unexpectedly. Your text is safe; the next build starts afresh.",
   "module.timeLimit": "{name} did not finish building within {seconds} seconds, so it was not installed.",
   "preflight.noPortraitDescription": "The portrait of {person} needs a description for the accessible PDF.",
-  "map.lineTooFew": "A line needs at least two points."
+  "map.lineTooFew": "A line needs at least two points.",
+  "codex.failed": "Scriptorum could not do that in the codex, and nothing was changed. The details are in a crash log in the app's own folder.",
+  "codex.noAdventure": "Open or create an adventure first.",
+  "codex.cannotConvert": "This block cannot become a codex entry.",
+  "codex.noBlock": "The block was not found. It may have moved; please try again.",
+  "codex.cardKind": "This element cannot show a codex entry: {element}."
 }

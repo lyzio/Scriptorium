@@ -1,0 +1,21 @@
+{
+  "id": "t-river-folk",
+  "name": "River folk",
+  "icon": "entry",
+  "title_field": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "text",
+      "label": "Name",
+      "required": true
+    },
+    {
+      "name": "mood",
+      "kind": "text",
+      "label": "Mood",
+      "required": false
+    }
+  ],
+  "card_element": "person"
+}

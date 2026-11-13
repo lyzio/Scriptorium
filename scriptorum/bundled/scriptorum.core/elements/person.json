@@ -20,6 +20,12 @@
       "label": "field.person.mood"
     },
     {
+      "name": "how-to-play",
+      "kind": "rich",
+      "required": false,
+      "label": "field.person.how-to-play"
+    },
+    {
       "name": "description",
       "kind": "rich",
       "required": false,

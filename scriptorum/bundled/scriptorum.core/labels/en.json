@@ -146,5 +146,10 @@
   "element.footnote": "Footnote",
   "field.footnote.text": "Footnote text",
   "field.handout.only-handout": "Only as handout",
-  "print.give-out": "Give out Handout {n}"
+  "print.give-out": "Give out Handout {n}",
+  "field.person.how-to-play": "How to play",
+  "field.information.clue": "Clue",
+  "print.how-to-play": "How to play",
+  "print.clues": "Clues",
+  "print.known-by": "Known by"
 }

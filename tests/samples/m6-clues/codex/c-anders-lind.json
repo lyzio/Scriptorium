@@ -1,0 +1,11 @@
+{
+  "id": "c-anders-lind",
+  "type": "person",
+  "fields": {
+    "name": "Anders Lind",
+    "mood": "Suspicious",
+    "description": "The ferryman's son."
+  },
+  "folder": "People",
+  "tags": []
+}

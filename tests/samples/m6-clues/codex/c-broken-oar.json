@@ -1,0 +1,10 @@
+{
+  "id": "c-broken-oar",
+  "type": "clue",
+  "fields": {
+    "name": "The broken oar",
+    "description": "An oar snapped clean in two, its blade marked with three notches."
+  },
+  "folder": "Clues",
+  "tags": []
+}

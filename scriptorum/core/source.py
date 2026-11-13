@@ -696,6 +696,11 @@ def _parse_element(text, j, ident, k, kinds, base_line):
                     block["fields"][name] = escape_inline(val)
                 else:
                     return None
+            elif definition.get("keeps_extra_fields") and vtype != "none":
+                # F3 (M6 part C4): Convert to codex entry leaves a field the
+                # codex type lacks on the card, exactly as written, so
+                # nothing is lost; the card prints it as before.
+                block.setdefault("extra", {})[name] = value.strip()
             else:
                 return None
     except (ValueError, Unbalanced):
@@ -820,6 +825,8 @@ def _element_head(block: dict, definition: dict) -> str:
             args.append(f"{field['name']}: true")
         else:
             args.append(f"{field['name']}: {quote_string(str(value))}")
+    for name, raw in (block.get("extra") or {}).items():
+        args.append(f"{name}: {raw}")  # F3 (M6 part C4): kept on the card as written
     variant_ids = [v["id"] for v in definition.get("variants") or []]
     if variant_ids:
         variant = block.get("variant") or definition.get("default_variant") or variant_ids[0]

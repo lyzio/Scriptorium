@@ -187,8 +187,21 @@ class World:
             fields.insert(0, {"name": "name", "kind": "text", "label": "Name", "required": True})
         fields[0]["required"] = True
         definition = {"id": type_id, "name": name, "icon": "entry", "title_field": fields[0]["name"], "fields": fields}
+        # F3 (M6 part C4): the element that shows the entry in the text, such
+        # as a person card, so Convert to codex entry is offered on it.
+        card = data.get("card")
+        if card:
+            if card not in self.card_kinds():
+                raise WorldError("error.codex.cardKind", element=card)
+            definition["card_element"] = card
         self.adventure.files[f"{TYPES_PREFIX}{type_id}.json"] = _dump(definition)
         return definition
+
+    def card_kinds(self) -> List[str]:
+        """Element kinds that can show a codex entry of an author's own type:
+        the forms with fields, such as the person card and the creature."""
+        return [k for k, d in self.kinds.items()
+                if d.get("editor") == "form" and k not in ("card", "scene", "map") and d.get("category", "block") == "block"]
 
     # --- entries (F3) -------------------------------------------------------------
     def entry_files(self) -> List[str]:
@@ -682,6 +695,180 @@ class World:
             self.adventure.set_chapter_text(chapter, source.serialize(doc, self.kinds))
         return {"linked": linked, "created": len(created)}
 
+    # --- F3 (M6 part C4): Convert to codex entry, everywhere it fits ------------------------
+    # A block field that lands in a codex field of another name: a person
+    # card's Linked to is "links" in the text and "linked-to" in the codex.
+    FIELD_ALIASES = {"person": {"links": "linked-to"}}
+
+    def fitting_types(self, kind: str) -> List[dict]:
+        """Every codex type whose card element is this element kind: Person
+        for a person card, Creature for a creature, and any type of the game
+        system or the author that names the kind as its card (9.5)."""
+        if kind == "card":
+            return []  # a block that already shows a codex entry
+        return [t for t in self.types().values() if t.get("card") == kind]
+
+    def block_values(self, block: dict, t: dict) -> Tuple[dict, dict]:
+        """(entry fields, fields kept on the card) when a block becomes an
+        entry of codex type t. A field the type lacks stays on the card in
+        the text, so nothing is lost."""
+        definition = self.kinds.get(block["kind"], {})
+        tfields = {f["name"]: f for f in t["fields"]}
+        aliases = self.FIELD_ALIASES.get(block["kind"], {})
+        values, kept = {}, {}
+        given = block.get("fields") or {}
+        for f in definition.get("fields", []):
+            value = given.get(f["name"])
+            if value in (None, "", [], False) or f.get("kind") in ("id", "seed"):
+                continue
+            target = aliases.get(f["name"], f["name"])
+            tf = tfields.get(target)
+            converted = _convert_value(value, f.get("kind"), tf.get("kind") if tf else None)
+            if tf is not None and converted is not None and target not in values:
+                values[target] = converted
+            else:
+                kept[f["name"]] = (value, f.get("kind"))
+        return values, kept
+
+    def taken_entries(self, type_id: str, title: str) -> List[dict]:
+        """Entries of the same type with the same name (F3, a taken name)."""
+        name = (title or "").strip().lower()
+        return [e for e in self.entries().values() if e["type"] == type_id and e["title"].strip().lower() == name]
+
+    def differences(self, values: dict, entry: dict, t: dict) -> List[dict]:
+        """Every field where the card and the entry both hold a value and the
+        values differ, as plain text, for the Link dialog."""
+        out = []
+        for f in t["fields"]:
+            if f["name"] == t["title_field"]:
+                continue
+            mine, theirs = values.get(f["name"]), entry["fields"].get(f["name"])
+            if mine in (None, "", []) or theirs in (None, "", []) or mine == theirs:
+                continue
+            out.append({"field": f["name"], "label": self.labels.get(f.get("label", ""), f.get("label", f["name"])),
+                        "card": self._plain(mine, f.get("kind")), "entry": self._plain(theirs, f.get("kind"))})
+        return out
+
+    def _plain(self, value, kind) -> str:
+        if isinstance(value, list):
+            entries = self.entries()
+            return ", ".join(entries[v]["title"] if v in entries else v for v in value)
+        if kind == "rich":
+            return source.inline_to_plain(str(value))
+        return str(value)
+
+    def convert_info(self, chapter_index: int, path: List[int]) -> dict:
+        """What Convert to codex entry would do for one block: the fitting
+        types and, for each, the entries that already have its name."""
+        _chapter, _doc, chain = self._locate(chapter_index, path)
+        block = chain[-1]
+        result = {"kind": block["kind"], "types": []}
+        for t in self.fitting_types(block["kind"]):
+            values, kept = self.block_values(block, t)
+            title = str(values.get(t["title_field"], "") or "")
+            result["types"].append({
+                "id": t["id"], "name": t["name"], "title": title, "kept": sorted(kept),
+                "taken": [{"id": e["id"], "title": e["title"], "differences": self.differences(values, e, t)}
+                          for e in self.taken_entries(t["id"], title)],
+            })
+        return result
+
+    def convert_block(self, chapter_index: int, path: List[int], type_id: str, link: Optional[str] = None) -> dict:
+        """F3 (M6 part C4): the block becomes a card of a codex entry, new or
+        existing, in one step. A new entry gets every field the block has.
+        Linking keeps the entry's values and fills its empty fields from the
+        block. Fields the type lacks stay on the card. Information written
+        inside a person card stays inside the card, so it is known by the
+        entry (F3, 11.3)."""
+        chapter, doc, chain = self._locate(chapter_index, path)
+        block = chain[-1]
+        t = next((x for x in self.fitting_types(block["kind"]) if x["id"] == type_id), None)
+        if t is None:
+            raise WorldError("error.codex.cannotConvert", element=block["kind"])
+        values, kept = self.block_values(block, t)
+        title = str(values.get(t["title_field"], "") or "").strip()
+        if link:
+            entry = self.entry(link)
+            if entry is None or entry["type"] != type_id:
+                raise WorldError("error.codex.noEntry", entry=link)
+            fill = {k: v for k, v in values.items() if entry["fields"].get(k) in (None, "", [])}
+            entry = self.update_entry(link, {"fields": fill}) if fill else entry
+        else:
+            if not title:
+                raise WorldError("error.codex.titleRequired")
+            entry = self.create_entry(type_id, title, values)
+        card = {"type": "element", "kind": "card", "fields": {"entry": entry["id"]}, "variant": None, "new_page": None,
+                "body": block["body"] if isinstance(block.get("body"), dict) else {"blocks": [], "trail": "\n"}}
+        if kept:
+            card["extra"] = {name: _raw_value(value, kind) for name, (value, kind) in kept.items()}
+        if block.get("sep") is not None:
+            card["sep"] = block["sep"]
+        parent = chain[-2]["body"]["blocks"] if len(chain) > 1 else doc["blocks"]
+        parent[path[-1]] = card
+        for b in chain[:-1]:
+            source.mark_changed(b)
+        self.adventure.set_chapter_text(chapter, source.serialize(doc, self.kinds))
+        return {"id": entry["id"], "title": entry["title"], "linked": bool(link), "kept": sorted(kept)}
+
+    def _locate(self, chapter_index: int, path: List[int]):
+        if not (0 <= chapter_index < len(self.adventure.chapters)) or not path:
+            raise WorldError("error.codex.noBlock")
+        chapter = self.adventure.chapters[chapter_index]
+        doc = source.parse(self.adventure.chapter_text(chapter), self.kinds)
+        try:
+            chain = _block_chain(doc, [int(p) for p in path])
+        except (IndexError, KeyError, TypeError, ValueError):
+            raise WorldError("error.codex.noBlock") from None
+        if chain[-1].get("type") != "element":
+            raise WorldError("error.codex.noBlock")
+        return chapter, doc, chain
+
+    # --- F3 (M6 part C4): clues as Information -------------------------------------------
+    def clue_knowers(self, clue_id: str) -> List[dict]:
+        """Who knows a clue: the people in the Known by of each Information
+        item that shows it, the codex person whose card holds it, a loose
+        person card that holds it (by its name), and every entry whose
+        Linked to points to the clue. Each once, in order of first use."""
+        entries = self.entries()
+        found: List[dict] = []
+
+        def add(item):
+            if item not in found:
+                found.append(item)
+
+        def walk(blocks, holder):
+            for block in blocks:
+                if block["type"] != "element":
+                    continue
+                fields = block.get("fields") or {}
+                here = holder
+                if block["kind"] == "card":
+                    here = {"id": fields.get("entry")}
+                elif block["kind"] == "person":
+                    here = {"name": source.inline_to_plain(str(fields.get("name", "")))}
+                if block["kind"] == "information" and fields.get("clue") == clue_id:
+                    for k in fields.get("known-by") or []:
+                        add({"id": k})
+                    if holder:
+                        add(holder)
+                if isinstance(block.get("body"), dict):
+                    walk(block["body"]["blocks"], here)
+
+        for _index, _chapter, doc in self._chapter_docs():
+            walk(doc["blocks"], None)
+        for e in entries.values():
+            if clue_id in self._links_of(e):
+                add({"id": e["id"]})
+        out = []
+        for item in found:
+            if "id" in item:
+                e = entries.get(item["id"])
+                if e:
+                    out.append({"id": e["id"], "title": e["title"], "type": e["type"]})
+            elif item.get("name"):
+                out.append({"id": None, "title": item["name"], "type": "person"})
+        return out
+
     # --- data for the build (3.3) ------------------------------------------------------
     def build_data(self, mode: str, settings: dict, handwriting: Iterable[str] = ()) -> dict:
         types = self.types()
@@ -727,6 +914,47 @@ class World:
             # F7.3 (M4): the fill of the secret box, pale grey (default) or pale beige.
             "secret_fill": "beige" if (settings or {}).get("secret_fill") == "beige" else "grey",
         }
+
+
+def _convert_value(value, block_kind: Optional[str], entry_kind: Optional[str]):
+    """A block field's value as the codex field of another kind holds it, or
+    None when the two kinds do not fit (F3, M6 part C4)."""
+    if entry_kind is None:
+        return None
+    if entry_kind == "link":
+        if block_kind in ("codex", "codex-list"):
+            items = value if isinstance(value, list) else [value]
+            return [v for v in items if isinstance(v, str) and v] or None
+        return None
+    if isinstance(value, list) or block_kind in ("codex", "codex-list"):
+        return None
+    if entry_kind == "rich":
+        if block_kind == "rich":
+            return str(value)
+        if block_kind in ("text", "choice"):
+            return source.escape_inline(str(value))
+        return None
+    if entry_kind == "number":
+        return value if isinstance(value, int) and block_kind in ("number", "seed") else None
+    if entry_kind in ("text", "choice", "image"):
+        if block_kind == entry_kind or (entry_kind == "text" and block_kind == "choice"):
+            return str(value)
+        return None
+    return None
+
+
+def _raw_value(value, kind: Optional[str]) -> str:
+    """A field kept on a card, written as Typst as the element wrote it."""
+    if kind == "rich":
+        return f"[{value}]"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(int(value))
+    if isinstance(value, list):
+        items = [source.quote_string(str(v)) for v in value]
+        return "(" + ", ".join(items) + ("," if len(items) == 1 else "") + ")"
+    return source.quote_string(str(value))
 
 
 def _unit(value) -> float:
