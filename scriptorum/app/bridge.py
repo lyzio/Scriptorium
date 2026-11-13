@@ -47,10 +47,12 @@ class Bridge(QObject):
     fullScreenChanged = Signal(bool)  # F9 (M6): the window entered or left full screen
     selfTestFinished = Signal(str)   # F9: the theme self-test of Help ▸ Check installation
     updateChecked = Signal(str)      # F21 (M6 part C): the result of an update check
+    updateInstalled = Signal(str)    # F22 (M6 part C5): the result of Download and install
     _buildDone = Signal(object, object, int)
     _suggestDone = Signal(str)
     _selfTestDone = Signal(str)
     _updateDone = Signal(str)
+    _installDone = Signal(str)
 
     def __init__(self, session: Session, window=None, spelling=None):
         super().__init__()
@@ -76,6 +78,7 @@ class Bridge(QObject):
         self._buildDone.connect(self._finish_build)
         self._suggestDone.connect(self.suggestions.emit)
         self._updateDone.connect(self.updateChecked.emit)
+        self._installDone.connect(self.updateInstalled.emit)
         # F21: the update address and the reader of the update file; the
         # tests replace them, so no test ever reaches the internet.
         from scriptorum.core import updates
@@ -84,6 +87,20 @@ class Bridge(QObject):
         self.update_requests: List[str] = []   # every address asked, for the tests
         self.update_download: Optional[str] = None
         self.opened_downloads: List[str] = []
+        # F22: the pack named in the last signed update file, what downloads
+        # it (the tests replace it), and the versions kept in the author's
+        # folder. ``update_key`` and ``update_runtime`` stand in for the
+        # built-in key and this computer's libraries in the tests.
+        self.update_pack: Optional[dict] = None
+        self.update_version: Optional[str] = None
+        self.update_downloader = None
+        self.update_key: Optional[str] = None
+        self.update_runtime: Optional[dict] = None
+        self.update_moved: Optional[str] = None
+        from scriptorum import paths as _p
+        from scriptorum.core.packs import Versions
+        self.versions = Versions(_p.app_home())
+        self.start_notice = None
         # F21.4: the question at first start; test windows skip it unless a
         # test asks for it, so the other window tests are not interrupted.
         self.ask_updates_at_start = not getattr(window, "headless_test", False)
@@ -198,6 +215,15 @@ class Bridge(QObject):
     @Slot(result=str)
     def uiReady(self) -> str:
         self.ui_ready = True
+        # F22.5: this version opened its window, so it has started; anything
+        # the start-up step has to say is shown once.
+        from scriptorum import __version__
+        try:
+            self.versions.started(__version__)
+            if self.start_notice is None:
+                self.start_notice = self.versions.take_notice()
+        except OSError:
+            pass
         if self.on_ui_ready:
             self.on_ui_ready()
         return _json({"ok": True})
@@ -303,14 +329,19 @@ class Bridge(QObject):
             QDesktopServices.openUrl(QUrl(IDEA_SITE))
         return _json({"ok": True})
 
-    # --- the update check (F21, M6 part C) ----------------------------------------
+    # --- the update check (F21, M6 part C) and installing updates (F22, C5) ----------
+    def update_address(self) -> str:
+        """F22: the Update address the author entered, or the built-in one."""
+        from scriptorum.core import updates
+        return updates.address_in_use(self.session.app_settings.get("update_address"), self.update_url)
+
     def _run_update_check(self, auto: bool) -> None:
         """Ask for the update file in the background, so the window stays
         usable; the result arrives through ``updateChecked``."""
         from scriptorum import __version__
         from scriptorum.core import updates
 
-        url = self.update_url
+        url = self.update_address()
         settings = self.session.app_settings
 
         def opener(address: str) -> bytes:
@@ -318,21 +349,116 @@ class Bridge(QObject):
             return (self.update_opener or updates.fetch)(address)
 
         def work():
-            result = updates.check(__version__, url, opener)
+            result = updates.check(__version__, url, opener, key=self.update_key, have=self.update_runtime)
             if result["state"] not in (updates.NO_ADDRESS, updates.NOT_HTTPS):
                 settings.update({"update_last_check": int(time.time())})
             self.update_download = result.get("download")
+            self.update_pack = result.pop("pack", None)
+            self.update_version = result.get("version") if self.update_pack else None
+            self.update_moved = result.get("moved")
+            result["installable"] = self.update_pack is not None
             result["auto"] = auto
             result["current"] = __version__
+            result["address"] = url if updates.address_set(url) else ""
+            result["entered"] = bool((settings.get("update_address") or "").strip())
             if not self.closed:
                 self._updateDone.emit(_json(result))
         threading.Thread(target=work, daemon=True).start()
 
     @Slot(result=str)
     def checkForUpdates(self) -> str:
-        """Help ▸ Check for updates…: the only network request the app makes (D9)."""
+        """Help ▸ Check for updates…: with Download and install, the only
+        network requests the app makes (D9)."""
         self._run_update_check(auto=False)
         return _json({"ok": True})
+
+    @Slot(result=str)
+    def installUpdate(self) -> str:
+        """F22: Download and install, only when the author clicks it. The pack
+        is checked and unpacked into the author's own folder in the
+        background; open adventures are never interrupted. The result
+        arrives through ``updateInstalled``."""
+        from scriptorum import __version__
+        from scriptorum.core import updates
+
+        pack, version = self.update_pack, self.update_version
+        if not pack:
+            return _json({"ok": False})
+
+        def download(address: str) -> bytes:
+            self.update_requests.append(address)
+            return (self.update_downloader or updates.fetch_pack)(address)
+
+        def work():
+            try:
+                installed = updates.install(pack, self.versions, download, key=self.update_key,
+                                            have=self.update_runtime, running=self._running_kept(__version__),
+                                            expected=version)
+                result = {"ok": True, "version": installed}
+            except updates.InstallError as exc:
+                result = {"ok": False, "reason": exc.reason}
+            except Exception as exc:  # noqa: BLE001 - said plainly, details in the crash log
+                from scriptorum.core import crashlog
+                crashlog.write_crash_log(type(exc), exc, exc.__traceback__)
+                result = {"ok": False, "reason": "damaged"}
+            if not self.closed:
+                self._installDone.emit(_json(result))
+        threading.Thread(target=work, daemon=True).start()
+        return _json({"ok": True})
+
+    def _running_kept(self, running: str) -> Optional[str]:
+        """The version running now, when it runs from the author's folder."""
+        import os
+        from scriptorum.boot import ENV_FOLDER
+        folder = os.environ.get(ENV_FOLDER)
+        if folder and Path(folder).name == running and Path(folder).parent == self.versions.root:
+            return running
+        return None
+
+    @Slot(result=str)
+    def useMovedAddress(self) -> str:
+        """F22: the signed update file said the address has moved, and the
+        author answered Yes: the new address goes into the Update address field."""
+        from scriptorum.core import updates
+        moved = self.update_moved
+        if not updates.address_ok(moved or ""):
+            return _json({"ok": False})
+        self.session.app_settings.update({"update_address": moved})
+        self.update_moved = None
+        return _json({"ok": True, "app": self._app_info()})
+
+    @Slot(str, result=str)
+    def setUpdateAddress(self, address: str) -> str:
+        """F22: Settings ▸ Application ▸ Updates ▸ Update address. Only https
+        is accepted; an empty field (Use built-in address) means UPDATE_URL."""
+        from scriptorum.core import updates
+        address = (address or "").strip()
+        if address and not updates.address_ok(address):
+            return _json({"ok": False, "error": self.session.t("update.addressRefused")})
+        self.session.app_settings.update({"update_address": address})
+        return _json({"ok": True, "app": self._app_info()})
+
+    @Slot(result=str)
+    def versionInfo(self) -> str:
+        """F22: the version running, the installed app's own, the one Help ▸
+        Go back to version would run, and what the start-up step has to say."""
+        from scriptorum import __version__
+        from scriptorum.boot import builtin_version
+        builtin = builtin_version()
+        try:
+            back = self.versions.back_target(__version__, builtin)
+        except OSError:
+            back = None
+        notice, self.start_notice = self.start_notice, None
+        return _json({"running": __version__, "builtin": builtin, "back": back, "notice": notice})
+
+    @Slot(result=str)
+    def goBack(self) -> str:
+        """F22.5: Help ▸ Go back to version X. The next start runs X."""
+        from scriptorum import __version__
+        from scriptorum.boot import builtin_version
+        target = self.versions.go_back(__version__, builtin_version())
+        return _json({"ok": target is not None, "version": target})
 
     @Slot(result=str)
     def weeklyUpdateCheck(self) -> str:
@@ -340,7 +466,7 @@ class Bridge(QObject):
         and a week has passed since the last check."""
         from scriptorum.core import updates
 
-        due = updates.weekly_due(self.session.app_settings) and updates.address_set(self.update_url)
+        due = updates.weekly_due(self.session.app_settings) and updates.address_set(self.update_address())
         if due:
             self._run_update_check(auto=True)
         return _json({"ok": True, "started": due})

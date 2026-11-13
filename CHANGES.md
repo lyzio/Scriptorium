@@ -1,51 +1,58 @@
-# Scriptorum M6-0.6.6 — Changes
+# Scriptorum M6-0.6.7 — Changes
 
-Base: **M6-0.6.5** (`main`). This is part C4 of Milestone 6 (decided 13 November 2026): the codex points of F3, the Clue field on Information (11.3), and How to play and the Clues line on the person card (11.4).
+Base: **M6-0.6.6** (`main`, accepted and merged on 13 November 2026). This is part C5 of Milestone 6 (decided 13 November 2026): installing updates (F22) with signed update packs, the start-up step that runs a newer version from the author's folder, going back to the previous version, and the release script; and the two issues found in the project manager's tests of 0.6.6.
 
-- Convert to codex entry everywhere it fits, with a taken name (Link or new, with the differing values listed) and several fitting types
-- pickers for Insert ▸ Person, Creature and Clue; the Codex card item lists only entries without a card of their own
-- codex actions never fail silently
-- clues as Information, with Insert ▸ Clue; a Clue entry and the clue overview say who knows it
-- How to play and the Clues line on the person card
+- Download and install from Help ▸ Check for updates…, only when the author clicks it; the pack is checked and unpacked into the author's own folder for the next start
+- every update file and pack signed with the project's Ed25519 key (cryptography 48.0.1); the app uses nothing that is not signed
+- the start-up step: a newer verified version made for this Python, Qt and Typst runs from the author's folder; a version that fails to start is set aside and Scriptorum goes back by itself and says so; Help ▸ Go back to version X; only two versions kept
+- the built-in update address is the GitHub release address; Settings ▸ Application ▸ Updates ▸ Update address, https only; a signed update file may move the address
+- the release script, `tools/release.py`, and a hand-test tool, `tools/try_update.py`
+- paragraphs and headings fill the editor's width (issue #8)
+- a short block's ↑ ↓ + × menu is a 2 × 2 square and stays on top while the pointer is on it (issue #9)
 
-Issues fixed: none. No open issue was planned for this build; #1 (New entry ▸ Creature does nothing) is planned for a later build, and this build only makes such a failure say why.
+Issues fixed: #8 (Fullscreen not fullscreening), #9 (Block menu problem).
 
-Every file not listed here is unchanged from M6-0.6.5.
+Every file not listed here is unchanged from M6-0.6.6.
 
 ## Added
 
 | File | Why |
 |---|---|
-| `tests/test_m6c4.py` | T-SRC-20, T-WORLD-30 … 33, T-UI-42, T-UI-43 |
-| `tests/samples/m6-clues/` | Sample *The Ferryman's Debt*: loose cards to convert, a codex person with How to play, clues inside and outside cards, a creature, an own codex type shown as a person card, the clue overview |
+| `scriptorum/boot.py` | The start-up step: chooses and runs a kept version or the installed one; a failed start goes back (F22.4, F22.5) |
+| `scriptorum/core/packs.py` | Update packs: safe unpacking, the signed file list, the runtime check, and the versions kept in the author's folder with `state.json` (F22, 9.7) |
+| `scriptorum/core/signing.py` | Ed25519 signatures on update files and packs (F22) |
+| `scriptorum/core/update_key.py` | The project's public key; empty until `tools/release.py keygen` is run (F22) |
+| `scriptorum/licences/parts/cryptography.txt` | cryptography's licence for About ▸ Under the hood (F9, section 7) |
+| `tools/release.py` | The release script: the key once, then the pack and the signed update file from the tagged commit of main (F22, D12) |
+| `tools/try_update.py` | Try the start-up step and Go back by hand with a throwaway key |
+| `tests/test_m6c5.py` | T-REL-04 to 07, T-UI-44 to 47 |
+| `tests/update_keys.py` | The tests' own signing keys |
 
 ## Changed
 
 | File | Why |
 |---|---|
-| `scriptorum/core/world.py` | Convert to codex entry (fitting types, field mapping, fields kept on the card, a taken name with its differences, linking); who knows a clue; an own type may name the element that shows it (F3) |
-| `scriptorum/core/session.py` | `convert_info` and `convert_to_entry` as one undo step; a codex change that fails is undone; the codex list carries a clue's text and the elements an own type may be shown as; a Clue entry lists who knows it; a clue Information gives no empty-element warning |
-| `scriptorum/core/source.py` | A codex card keeps fields its codex type lacks, as written, and writes them back (F3) |
-| `scriptorum/app/bridge.py` | `convertInfo`, `convertToEntry`; every codex call says why it failed, and an unexpected error is written to a crash log (F3, F2.11) |
-| `scriptorum/bundled/scriptorum.core/elements/person.json`, `codex-types/person.json` | How to play (11.4) |
-| `scriptorum/bundled/scriptorum.core/elements/information.json` | The Clue field (11.3) |
-| `scriptorum/bundled/scriptorum.core/elements/card.json` | `keeps_extra_fields` |
-| `scriptorum/bundled/scriptorum.core/typst/elements.typ` | A clue Information prints the clue's description and name; How to play; the Clues line; a card prints the fields kept on it; the clue overview says who knows each clue |
-| `scriptorum/bundled/scriptorum.core/labels/en.json` | How to play, Clue, Clues, Known by |
-| `scriptorum/bundled/scriptorum.vaesen/templates/_style.typ`, `information.typ`, `person.typ`, `end-clues.typ` | The clue mark, the clue's name, How to play, the Clues line, Known by in the overview |
-| `scriptorum/bundled/scriptorum.{plain,legends-and-lattes,call-of-cthulhu}/templates/…` | Written again by `tools/make_general_themes.py` |
-| `scriptorum/bundled/scriptorum.en/strings/codex.json`, `error.json`, `menu.json` | The words of this build (F15) |
-| `scriptorum/bundled/scriptorum.en/strings/guide-theme.json`, `tools/guides/how-to-write-a-theme.md` | The theme guide describes `clue`, `how-to-play` and `clues` (F19) |
-| `ui-src/app.ts` | Convert to codex entry with its questions; the picker; Insert ▸ Clue; no silent failures |
-| `ui-src/editor.ts` | A clue Information shows the clue's text; fields kept on a card; the Codex card lists only entries without a card of their own; Information in a codex card shows that person in Known by |
-| `ui-src/world.ts` | No silent failures; a Clue entry shows who knows it; the type editor's Shown in the text as |
-| `ui-src/model.ts` | Fields kept on a card |
-| `scriptorum/ui/index.html`, `styles.css` | The picker dialog; clue text and kept fields in the editor |
+| `scriptorum/core/updates.py` | UPDATE_URL is the GitHub release address; the update file must be signed; Download and install; the Update address in use; a moved address (F21, F22) |
+| `scriptorum/core/appsettings.py` | `update_address`, https only (F22) |
+| `scriptorum/core/about.py` | cryptography in Under the hood (F9) |
+| `scriptorum/app/bridge.py` | `installUpdate`, `setUpdateAddress`, `useMovedAddress`, `versionInfo`, `goBack`; a version reports that it started when its window is ready (F22) |
+| `scriptorum/app/main.py` | Reuses the application object when a failed version handed over to the installed one (F22.5) |
+| `scriptorum/__main__.py` | Runs the start-up step first; the build helper runs from the same version folder (F22) |
+| `scriptorum/bundled/scriptorum.en/strings/update.json`, `menu.json`, `settings.json`, `about.json` | The words of this build (F15) |
+| `scriptorum/ui/index.html`, `styles.css` | Download and install and the address in the update dialog; the Update address field; a wider update dialog; the 2 × 2 block menu (#9); no 100-character limit on paragraphs (#8) |
+| `ui-src/app.ts` | Download and install, the moved address, Help ▸ Go back to version, the start notice |
+| `ui-src/shell.ts` | The Update address field in Settings ▸ Application |
+| `ui-src/editor.ts` | The block menu stays on top while the pointer is on it (#9) |
 | `scriptorum/ui/dist/app.js` | Rebuilt |
-| `tests/test_ui_m3.py` | T-WORLD-09 corrected: the Linked to text of the M2 sample now stays on the card |
-| `tests/scenarios/run_use_scenarios.py` | The C4 steps; Insert ▸ Person and Creature write a loose card through the picker |
+| `pyproject.toml` | Version 0.6.7; cryptography 48.0.1; the `scriptorum` command runs the start-up step |
+| `tests/conftest.py` | The tests trust their own key; no test starts a kept version |
+| `tests/test_m6c.py` | T-UI-32 signs its update files and asks the placeholder explicitly (the design changed: F22) |
+| `tests/test_m6c3.py` | T-UI-40 no longer expects paragraphs to stop at 100 characters (issue #8; T-UI-46 checks them) |
+| `tests/test_m6b.py` | T-UI-34 expects cryptography in Under the hood |
+| `tests/scenarios/run_use_scenarios.py` | The C5 steps: the Update address, Check for updates, Download and install, the full-width paragraph; the C1 step sets the placeholder itself, since the built-in address is now real |
+| `.gitignore` | `dist-release/` |
 | `README.md`, `TEST-REPORT.md`, `CHANGES.md` | This build |
-| `scriptorum/__init__.py`, `pyproject.toml`, `ui-src/package.json` | Version 0.6.6 |
+| `scriptorum/__init__.py`, `ui-src/package.json` | Version 0.6.7 |
 
 ## Deleted
 

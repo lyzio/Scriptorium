@@ -693,6 +693,21 @@
     for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
     return node;
   }
+  var heldMenu = null;
+  function holdMenu(wrap) {
+    if (heldMenu && heldMenu !== wrap) heldMenu.classList.remove("menu-held");
+    heldMenu = wrap;
+    wrap.classList.add("menu-held");
+    document.body.classList.add("blk-menu-held");
+  }
+  function releaseMenu() {
+    heldMenu?.classList.remove("menu-held");
+    heldMenu = null;
+    document.body.classList.remove("blk-menu-held");
+  }
+  document.addEventListener("pointermove", (event3) => {
+    if (heldMenu && !(event3.target instanceof Element && event3.target.closest(".blk-controls"))) releaseMenu();
+  }, true);
   function iconButton(labelKey, symbol, onClick) {
     const button2 = el("button", "icon-btn", { type: "button" });
     const text = t(labelKey);
@@ -940,6 +955,8 @@
           }),
           iconButton("editor.delete", "\xD7", () => this.remove(place))
         );
+        controls.addEventListener("pointerenter", () => holdMenu(wrap));
+        controls.addEventListener("pointerleave", () => releaseMenu());
         wrap.append(controls);
       }
       if (block.type === "heading") {
@@ -2524,6 +2541,12 @@
     applyAppearance();
     if (currentSection) renderSection(currentSection);
   }
+  function applyAppSettings(info2) {
+    if (!info2) return;
+    app = info2;
+    applyAppearance();
+    if (currentSection && !$3("settings").classList.contains("hidden")) renderSection(currentSection);
+  }
   function renderModeSwitch() {
     const host = document.getElementById("mode-switch");
     if (!host) return;
@@ -2736,6 +2759,37 @@
     const label = h2("label", "settings-check");
     label.append(weekly, h2("span", void 0, t("settings.app.updateWeekly")));
     page.append(label, h2("p", "settings-note", t("settings.app.updateNote")));
+    const address = h2("input");
+    address.type = "url";
+    address.id = "app-updateAddress";
+    address.spellcheck = false;
+    address.placeholder = t("settings.app.updateAddressBuiltIn");
+    address.value = v.update_address || "";
+    const error3 = h2("p", "settings-error hidden");
+    error3.id = "app-updateAddressError";
+    error3.setAttribute("role", "alert");
+    const store = async (value) => {
+      const reply = await call("setUpdateAddress", value);
+      if (reply?.ok) {
+        app = reply.app;
+        error3.classList.add("hidden");
+        address.value = app.values.update_address || "";
+      } else {
+        error3.textContent = reply?.error ?? "";
+        error3.classList.remove("hidden");
+      }
+    };
+    address.addEventListener("change", () => store(address.value));
+    const builtIn = h2("button", "small-btn", t("settings.app.updateAddressReset"));
+    builtIn.type = "button";
+    builtIn.id = "app-updateAddressReset";
+    builtIn.addEventListener("click", () => {
+      address.value = "";
+      store("");
+    });
+    const addressRow = h2("div", "settings-row update-address-row");
+    addressRow.append(h2("span", void 0, t("settings.app.updateAddress")), address, builtIn);
+    page.append(addressRow, error3, h2("p", "settings-note", t("settings.app.updateAddressNote")));
     page.append(h2("h3", void 0, t("settings.app.language")));
     page.append(row(t("settings.app.interfaceLanguage"), select(
       app.languages.map((l) => [l.id, l.name]),
@@ -4357,7 +4411,7 @@
     }]);
   }();
   var Set$1 = (typeof Set === "undefined" ? "undefined" : _typeof(Set)) !== undef ? Set : ObjectSet;
-  var Element = function Element2(cy, params) {
+  var Element2 = function Element3(cy, params) {
     var restore = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : true;
     if (cy === void 0 || params === void 0 || !core2(cy)) {
       error("An element must have a core reference and parameters set");
@@ -14707,7 +14761,7 @@
         } else if (cy.hasElementWithId(_data.id) || elesIds.has(_data.id)) {
           continue;
         }
-        var ele = new Element(cy, json2, false);
+        var ele = new Element2(cy, json2, false);
         eles.push(ele);
         elesIds.add(_data.id);
       }
@@ -14762,7 +14816,7 @@
       this.restore();
     }
   };
-  var elesfn$1 = Element.prototype = Collection.prototype = Object.create(Array.prototype);
+  var elesfn$1 = Element2.prototype = Collection.prototype = Object.create(Array.prototype);
   elesfn$1.instanceString = function() {
     return "collection";
   };
@@ -14923,7 +14977,7 @@
     for (var i = 0; i < this.length; i++) {
       var ele = this[i];
       var json2 = ele.json();
-      var clone3 = new Element(cy, json2, false);
+      var clone3 = new Element2(cy, json2, false);
       elesArr.push(clone3);
     }
     return new Collection(cy, elesArr);
@@ -15307,7 +15361,7 @@
         elements = new Collection(cy, _jsons2);
       } else {
         var _json = opts;
-        elements = new Element(cy, _json).collection();
+        elements = new Element2(cy, _json).collection();
       }
       return elements;
     },
@@ -35070,8 +35124,12 @@
         { label: t("menu.example"), action: () => openExample() },
         // F9 (M5): the start-up checks on demand, with the theme self-test.
         { label: t("menu.checkInstallation"), action: () => openCheckDialog() },
-        // F21 (M6 part C): the only network request the app makes.
+        // F21 (M6 part C): with Download and install (F22), the only network
+        // requests the app makes.
         { label: t("menu.checkUpdates"), action: () => checkForUpdates() },
+        // F22 (M6 part C5): offered only while a version from the author's
+        // folder runs; the next start runs the previous version.
+        ...versionInfo?.back ? [{ label: t("menu.goBack", { version: versionInfo.back }), action: () => goBack() }] : [],
         // F19 (M5): the author guides, opened inside the app.
         { label: t("menu.guideTheme"), action: () => openGuide("guide-theme") },
         { label: t("menu.guideGameSystem"), action: () => openGuide("guide-game-system") },
@@ -36444,16 +36502,20 @@
     document.body.dataset.selfTestDone = String(Number(document.body.dataset.selfTestDone || 0) + 1);
   }
   var updateWanted = false;
+  var versionInfo = null;
   async function checkForUpdates() {
     const dialog = $6("update-dialog");
     $6("update-text").textContent = t("update.checking");
     $6("update-note-box").classList.add("hidden");
     $6("update-open").classList.add("hidden");
+    $6("update-install").classList.add("hidden");
+    $6("update-install-text").classList.add("hidden");
+    $6("update-address").textContent = "";
     if (!dialog.open) dialog.showModal();
     updateWanted = true;
     await call("checkForUpdates");
   }
-  function onUpdateChecked(r) {
+  async function onUpdateChecked(r) {
     if (r?.auto ? r.state !== "newer" : !updateWanted) return;
     if (!r.auto) updateWanted = false;
     const texts = {
@@ -36461,17 +36523,66 @@
       "not-https": t("update.notHttps"),
       current: t("update.current", { current: r.current }),
       unreachable: t("update.unreachable"),
-      invalid: t("update.invalid")
+      invalid: t("update.invalid"),
+      unsigned: t("update.unsigned"),
+      "no-key": t("update.noKey")
     };
     const newer = r.state === "newer";
-    $6("update-text").textContent = newer ? t("update.newer", { version: r.version, current: r.current }) + (r.download ? "" : " " + t("update.noDownload")) : texts[r.state] ?? texts.invalid;
+    let text = newer ? t("update.newer", { version: r.version, current: r.current }) + (r.download ? "" : " " + t("update.noDownload")) : texts[r.state] ?? texts.invalid;
+    if (newer && r.needsInstaller) text += " " + t("update.needsInstaller");
+    $6("update-text").textContent = text;
     $6("update-note").textContent = newer ? r.note || "" : "";
     $6("update-note-box").classList.toggle("hidden", !(newer && r.note));
     $6("update-open").classList.toggle("hidden", !(newer && r.download));
+    $6("update-open").classList.toggle("primary", !(newer && r.installable));
+    $6("update-install").classList.toggle("hidden", !(newer && r.installable));
+    $6("update-install").disabled = false;
+    $6("update-install-text").classList.add("hidden");
+    $6("update-address").textContent = r.address ? t(r.entered ? "update.addressEntered" : "update.addressBuiltIn", { address: r.address }) : "";
     const dialog = $6("update-dialog");
     if (!dialog.open) dialog.showModal();
     document.body.dataset.updateState = r.state;
     document.body.dataset.updateDone = String(Number(document.body.dataset.updateDone || 0) + 1);
+    if (r.moved) {
+      const answer = await ask(t("update.moved", { address: r.moved }), t("update.movedYes"), "", t("update.movedNo"));
+      if (answer === "yes") {
+        const reply = await call("useMovedAddress");
+        if (reply?.app) applyAppSettings(reply.app);
+      }
+      document.body.dataset.movedDone = String(Number(document.body.dataset.movedDone || 0) + 1);
+    }
+  }
+  async function installUpdate() {
+    $6("update-install").disabled = true;
+    $6("update-install-text").textContent = t("update.installing");
+    $6("update-install-text").classList.remove("hidden");
+    await call("installUpdate");
+  }
+  function onUpdateInstalled(r) {
+    const reasons = {
+      unreachable: t("update.installUnreachable"),
+      runtime: t("update.needsInstaller")
+    };
+    $6("update-install-text").textContent = r?.ok ? t("update.ready") : reasons[r?.reason] ?? t("update.installRefused");
+    $6("update-install-text").classList.remove("hidden");
+    $6("update-install").classList.toggle("hidden", !!r?.ok);
+    $6("update-install").disabled = false;
+    document.body.dataset.installState = r?.ok ? "ready" : r?.reason ?? "failed";
+    document.body.dataset.installDone = String(Number(document.body.dataset.installDone || 0) + 1);
+  }
+  async function loadVersionInfo() {
+    versionInfo = await call("versionInfo");
+    const notice = versionInfo?.notice;
+    if (notice?.kind === "failed") showMessage(t("update.wentBack", { version: notice.version, back: notice.back_to }));
+    else if (notice?.kind === "back") showMessage(t("update.backDone", { version: notice.back_to }));
+  }
+  async function goBack() {
+    const back = versionInfo?.back;
+    if (!back) return;
+    const answer = await ask(t("update.goBackAsk", { version: back }), t("update.goBackYes"), "", t("dialog.cancel"));
+    if (answer !== "yes") return;
+    const reply = await call("goBack");
+    if (reply?.ok) showMessage(t("update.goBackReady", { version: reply.version }));
   }
   async function offerUpdateQuestion() {
     const reply = await call("updatePrompt");
@@ -36813,6 +36924,8 @@
     on("updateChecked", onUpdateChecked);
     $6("update-close").addEventListener("click", () => $6("update-dialog").close());
     $6("update-open").addEventListener("click", () => call("openDownloadPage"));
+    $6("update-install").addEventListener("click", () => installUpdate());
+    on("updateInstalled", onUpdateInstalled);
     initZoom();
     $6("zoom-window").addEventListener("click", () => call("openPreviewWindow"));
     $6("startup-bar-close").addEventListener("click", () => $6("startup-bar").classList.add("hidden"));
@@ -36826,6 +36939,7 @@
     await call("uiReady");
     await showStartupReport();
     await offerRecovery();
+    await loadVersionInfo();
     await offerUpdateQuestion();
   }
   window.__scriptorum = {
@@ -36887,7 +37001,7 @@
     fullScreen: () => fullScreen,
     about: aboutTest,
     // M6 part C: the update check (F21)
-    updates: { check: checkForUpdates, offer: offerUpdateQuestion },
+    updates: { check: checkForUpdates, offer: offerUpdateQuestion, install: installUpdate, loadVersionInfo, goBack },
     pickVersion,
     endVersionPreview,
     groupItems,

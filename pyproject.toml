@@ -1,6 +1,6 @@
 [project]
 name = "scriptorum"
-version = "0.6.6"
+version = "0.6.7"
 description = "A text processor for game masters writing their own adventures, with pixel-perfect PDF output."
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -13,13 +13,16 @@ dependencies = [
     "typst==0.15.0",
     # F4.8 spell check: a pure-Python Hunspell (MIT), so no compiled library is needed.
     "spylls==0.1.7",
+    # F22 (M6-0.6.7): Ed25519 signatures on update files and packs
+    # (Apache-2.0 OR BSD-3-Clause); 48.0.1 is the newest with Intel Mac builds (D2).
+    "cryptography==48.0.1",
 ]
 
 [project.optional-dependencies]
 test = ["pytest>=8", "pypdf>=5"]
 
 [project.scripts]
-scriptorum = "scriptorum.app.main:main"
+scriptorum = "scriptorum.boot:run"  # F22: the start-up step comes first
 
 [build-system]
 requires = ["setuptools>=77"]

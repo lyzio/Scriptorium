@@ -396,8 +396,11 @@ def test_T_WORLD_26_portrait_round_trips(session):
 # --- T-UI-32 the update check: the core ------------------------------------------------------
 
 def _file(version, note="Fixes the booklet order.", pages=None):
-    return json.dumps({"version": version, "note": note, "download": pages or {
-        "linux": "https://example.org/dl/linux", "macos": "https://example.org/dl/mac", "windows": "https://example.org/dl/win"}}).encode()
+    # From F22 (M6-0.6.7) the app uses nothing in an update file that is not
+    # signed with the project's key: the tests sign with their own key.
+    from tests.update_keys import signed
+    return signed({"version": version, "note": note, "download": pages or {
+        "linux": "https://example.org/dl/linux", "macos": "https://example.org/dl/mac", "windows": "https://example.org/dl/win"}})
 
 
 @pytest.mark.unit
@@ -415,8 +418,10 @@ def test_T_UI_32_update_check_outcomes():
             return data
         return read
 
-    assert updates.UPDATE_URL == updates.PLACEHOLDER == "Paste update url here"
-    assert updates.check("0.6.3", opener=opener(b"")) == {"state": "no-address"}
+    # From M6-0.6.7 the built-in address is the GitHub release address; a copy
+    # that holds the placeholder still makes no request.
+    assert updates.PLACEHOLDER == "Paste update url here"
+    assert updates.check("0.6.3", updates.PLACEHOLDER, opener=opener(b"")) == {"state": "no-address"}
     assert asked == []
     url = "https://example.org/scriptorum/update.json"
     r = updates.check("0.6.3", url, opener(_file("1.0.0")), platform="linux")

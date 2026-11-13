@@ -35,6 +35,7 @@ DEFAULTS = {
     "update_weekly": False,           # F21 (M6 part C): Check once a week, off by default
     "update_asked": False,            # F21: the question at first start is asked once
     "update_last_check": 0,           # F21: when the weekly check last ran (seconds)
+    "update_address": "",             # F22 (M6 part C5): empty means the built-in address
 }
 
 CHOICES = {
@@ -73,6 +74,12 @@ class AppSettings:
                 continue
             if key in CHOICES and value not in CHOICES[key]:
                 continue
+            if key == "update_address":
+                # F22: only an https address (or empty, for the built-in one).
+                from scriptorum.core.updates import address_ok
+                if not isinstance(value, str) or (value.strip() and not address_ok(value)):
+                    continue
+                value = value.strip()
             if key in RANGES:
                 try:
                     lo, hi = RANGES[key]

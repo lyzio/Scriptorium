@@ -99,16 +99,24 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .outline-empty { padding: 5px 16px; color: var(--quiet); }
 
 .editor-pane { overflow: auto; background: var(--bg); border-right: 1px solid var(--line); }
-.visual { max-width: none; margin: 0; padding: 24px clamp(34px, 4%, 72px) 120px 58px; font-family: var(--text-font); font-size: var(--editor-size); line-height: 1.55; }
+.visual { max-width: none; margin: 0; padding: 24px clamp(34px, 4%, 72px) 120px 82px; font-family: var(--text-font); font-size: var(--editor-size); line-height: 1.55; }
 .empty-note { color: var(--quiet); font-family: var(--ui-font); }
 
 /* Blocks */
 .blk { position: relative; margin: 0 0 12px; }
-.blk-controls { position: absolute; top: -2px; left: -48px; padding-right: 4px; display: none; flex-direction: column; align-items: center; gap: 2px; font-family: var(--ui-font); z-index: 3; }
-.blk:hover > .blk-controls, .blk:focus-within > .blk-controls, .blk-controls:hover { display: flex; }
+/* Issue #9 (M6-0.6.7, F4.13): the four buttons sit in a 2 × 2 square, so they
+   fit beside a one-line block, and the square has no holes the pointer could
+   fall through to the next block. */
+.blk-controls { position: absolute; top: -2px; left: -76px; padding: 0 4px 2px 0; display: none; grid-template-columns: 24px 24px; gap: 2px; font-family: var(--ui-font); z-index: 6; }
+.blk:hover > .blk-controls, .blk:focus-within > .blk-controls, .blk-controls:hover { display: grid; }
+/* While the pointer is on a block's menu, that menu stays on top and no other
+   block's menu or grip shows (issue #9). */
+body.blk-menu-held .blk:not(.menu-held) > .blk-controls,
+body.blk-menu-held .blk:not(.menu-held) > .grip-strip { display: none !important; }
+body.blk-menu-held .blk.menu-held > .blk-controls { display: grid; z-index: 20; }
 /* A zone as wide as the grip strip and the controls together, so the mouse
    stays on the block on its way to them. */
-.blk::before { content: ""; position: absolute; top: 0; bottom: 0; left: -48px; width: 48px; }
+.blk::before { content: ""; position: absolute; top: 0; bottom: 0; left: -76px; width: 76px; }
 /* F4.13 (M6 part C2): the grip is a strip down the whole left side of the
    block, about 20 px wide, touching it, with "::" in its middle; the pointer
    is a hand anywhere on it. */
@@ -668,8 +676,8 @@ body.preview-only .preview-pane { flex: 1; height: 100vh; box-sizing: border-box
 .update-note h3 { margin: 0 0 4px; font-size: 12px; color: var(--quiet); font-weight: 600; }
 .update-note p { margin: 0; white-space: pre-wrap; font-size: 13px; }
 
-/* M6 part C3: the editor fills its pane; running text stops at a reading width. */
-.visual .blk-paragraph > .rich, .visual .blk-heading > .heading-edit { max-width: 100ch; }
+/* M6 part C3: the editor fills its pane. Issue #8 (M6-0.6.7): running
+   paragraphs and headings use the full width too, like the frames. */
 .scene-end-line { margin: 8px 0 2px; padding-top: 4px; border-top: 1px dashed var(--line-strong); color: var(--quiet); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; user-select: none; }
 /* M6 part C3: numbered pins and lines in the map editor. */
 .map-pin-number { fill: #fff; font: 700 11px var(--ui-font); text-anchor: middle; pointer-events: none; }
@@ -691,3 +699,9 @@ body.preview-only .preview-pane { flex: 1; height: 100vh; box-sizing: border-box
 .kept-fields { margin-top: 6px; font-size: 0.9em; opacity: 0.85; }
 .kept-field { font-family: monospace; white-space: pre-wrap; }
 .codex-chip-fixed { opacity: 0.8; font-style: italic; }
+/* F22 (M6 part C5): Download and install, and the Update address. */
+.update-install { margin: 8px 0 4px; font-size: 13px; }
+.update-address { margin: 8px 0 0; color: var(--quiet); font-size: 11.5px; word-break: break-all; }
+.update-address-row input[type="url"] { flex: 1; min-width: 0; }
+.settings-error { color: var(--error); font-size: 12px; margin: 2px 0 6px; }
+#update-dialog { width: min(600px, 92vw); }

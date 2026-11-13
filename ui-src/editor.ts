@@ -71,6 +71,29 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+/** Issue #9: the block whose ↑ ↓ + × menu the pointer is on. */
+let heldMenu: HTMLElement | null = null;
+
+function holdMenu(wrap: HTMLElement): void {
+  if (heldMenu && heldMenu !== wrap) heldMenu.classList.remove("menu-held");
+  heldMenu = wrap;
+  wrap.classList.add("menu-held");
+  document.body.classList.add("blk-menu-held");
+}
+
+function releaseMenu(): void {
+  heldMenu?.classList.remove("menu-held");
+  heldMenu = null;
+  document.body.classList.remove("blk-menu-held");
+}
+
+// A button that moves or removes its block redraws the editor, so the menu
+// may vanish without the pointer leaving it: let go as soon as the pointer is
+// anywhere else.
+document.addEventListener("pointermove", (event) => {
+  if (heldMenu && !(event.target instanceof Element && event.target.closest(".blk-controls"))) releaseMenu();
+}, true);
+
 function iconButton(labelKey: string, symbol: string, onClick: () => void): HTMLButtonElement {
   const button = el("button", "icon-btn", { type: "button" });
   const text = t(labelKey);
@@ -364,6 +387,11 @@ export class VisualEditor {
         }),
         iconButton("editor.delete", "×", () => this.remove(place)),
       );
+      // Issue #9 (M6-0.6.7, F4.13): while the pointer is on this menu it stays
+      // on top and no other block's menu shows, even where the square hangs
+      // beside the next block.
+      controls.addEventListener("pointerenter", () => holdMenu(wrap));
+      controls.addEventListener("pointerleave", () => releaseMenu());
       wrap.append(controls);
     }
 

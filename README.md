@@ -1,10 +1,20 @@
-# Scriptorum — M6-0.6.6 (Milestone 6: Modules and release, part C4)
+# Scriptorum — M6-0.6.7 (Milestone 6: Modules and release, part C5)
 
-Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1, C2, C3 and C4 of Milestone 6** of the design document (section 10).
+Scriptorum is a desktop text processor for game masters writing their own adventures, with pixel-perfect PDF output through Typst. This folder is all of Milestone 5 plus **parts A, B, C1, C2, C3, C4 and C5 of Milestone 6** of the design document (section 10).
 
 Licence: GPL-3.0-or-later (see `COPYING`).
 
-## What M6 part C4 adds
+## What M6 part C5 adds
+
+- **Download and install (F22).** When Help ▸ Check for updates… finds a newer version made for this app's Python, Qt and Typst, it offers Download and install beside the download page. Nothing is downloaded until you click. The pack is checked (size, checksum and the project's signature) and unpacked into your own Scriptorum folder, in `app-versions/`, and the window says "Ready. The update is installed the next time Scriptorum starts." Open adventures are not interrupted, and the installed app itself is never changed. A version that needs a newer Python, Qt or Typst says "This version needs a new installer" and offers only the download page.
+- **Signed updates (F22).** Every update file and every pack is signed with the project's private Ed25519 key, which is kept outside the app and the repository; the app holds the public key in `scriptorum/core/update_key.py` and uses nothing that is not signed with it. The signature library is cryptography 48.0.1 (Apache-2.0 OR BSD-3-Clause), the newest version that still runs on Intel Macs with macOS 12. **The key does not exist yet:** until the project manager runs `python tools/release.py keygen` once and commits `update_key.py`, Check for updates… says that this copy holds no update key.
+- **The start-up step (F22).** `python -m scriptorum` (and the `scriptorum` command) first looks in your own folder for a newer verified version made for this Python, Qt and Typst, and runs it from there; otherwise it runs its own version as before. A version that fails to start is set aside: Scriptorum goes back to the previous one (at once after an error, or at the next start after a crash) and says so. Help ▸ Go back to version X does the same by hand, and is offered only while a version from your folder runs. Only the newest and the previous version are kept. Adventures, modules, palettes and settings are never touched.
+- **The update address (F21, F22).** The built-in address is now the GitHub release address, `https://github.com/lyzio/Scriptorum/releases/latest/download/scriptorium-update.json`. Settings ▸ Application ▸ Updates has an Update address field: an https address entered there is used instead, for the check and the download; anything else is refused with a plain message, and Use built-in address clears it. The Check for updates window names the address it used. A signed update file may say that the address has moved; Scriptorum then asks whether to use the new one.
+- **The release script (F22, D12).** `python tools/release.py keygen` makes the key once; `python tools/release.py 0.6.8 --note "…"` on the tagged commit of main writes the update pack and the signed `scriptorum-update.json` into `dist-release/`, and `--publish` attaches them to the GitHub release. It refuses an untagged commit, changed files, a version that is not the app's, and a key kept inside the repository.
+- **Paragraphs fill the editor's width (issue #8).** In a wide window, in full screen and with the preview hidden, running paragraphs and headings now use the full width of the editor column, like the frames.
+- **A short block's menu stays usable (issue #9).** The ↑ ↓ + × buttons sit in a 2 × 2 square beside the block, and while the pointer is on them no other block's menu shows, so a one-line block's lower buttons no longer hand over to the next block.
+
+## What M6 part C4 added
 
 - **Convert to codex entry, everywhere it fits (F3).** Right-click a person card, a creature, or any block whose kind is the card element of a codex type, and choose Convert to codex entry. A new entry gets every field the block has; a field the codex type lacks stays on the card in the text (in the editor under "Kept on this card"), so nothing is lost. The block becomes a card of the entry and prints as before. Information written inside a person card stays inside and is known by the entry. One Undo brings back both the card and the codex. A codex card does not offer it.
 - **A taken name, and several fitting types (F3).** If an entry of that type has the same name, you are asked "Link to the existing Ulrika, or make a new entry?". Link first lists every value that differs ("Mood: card says ‘nervous’, entry says ‘calm’"), keeps the entry's values and fills its empty fields from the card. When several types fit, you pick the type first.
@@ -13,7 +23,6 @@ Licence: GPL-3.0-or-later (see `COPYING`).
 - **How to play and the Clues line (11.4).** A person (card and codex entry) has How to play, printed right under Mood with a small HOW TO PLAY label. A Clues line lists each clue connected to the person, through clue Information they know or through Linked to, with its page. Neither prints when empty, so other cards print exactly as before.
 - **Codex actions never fail silently (F3).** A read-only adventure says "This adventure is read-only"; an unexpected error says so in plain words and writes the details to a crash log in the app's own folder.
 - **Own codex types.** The New type editor has "Shown in the text as": a codex card, a person card or a creature. A type shown as a person card is offered by Convert to codex entry on person cards.
-- **Update address.** Still the placeholder "Paste update url here"; paste the real address into `UPDATE_URL` in `scriptorum/core/updates.py` before release.
 
 ## What M6 part C3 adds
 
@@ -24,7 +33,6 @@ Licence: GPL-3.0-or-later (see `COPYING`).
 - **Numbered pins and a map key (F5).** Pins show a number; the key beside the map (or under a wide one) lists number, name and the pin's note. Numbers follow the order placed and can be changed. The handout version lists only the pins of handout layers.
 - **Lines on maps (F5).** The Line tool joins two pins (the line follows them) or draws a free line ended by a double-click. Solid or dashed, with an optional label along it; each line follows its layer's Show in handout.
 - **Only as handout (F6).** Tick it on a handout and the adventure PDF prints only "Give out Handout 1 · title" in its place; the handouts PDF is unchanged.
-- **Update address.** Still the placeholder "Paste update url here"; paste the real address into `UPDATE_URL` in `scriptorum/core/updates.py` before release.
 
 ## What M6 part C2 added
 
@@ -215,7 +223,7 @@ Requirements: Python 3.11–3.13 (not 3.14 or newer), and Linux, macOS 12 or new
 Install the pinned dependencies:
 
 ```
-pip install "PySide6==6.8.3" "typst==0.15.0" "spylls==0.1.7"
+pip install "PySide6==6.8.3" "typst==0.15.0" "spylls==0.1.7" "cryptography==48.0.1"
 ```
 
 Start Scriptorum:
@@ -238,7 +246,7 @@ Scriptorum keeps its own data (the module library, recent files, recovery copies
 | macOS | `~/Library/Application Support/Scriptorum` |
 | Windows | `%APPDATA%\Scriptorum` |
 
-Setting `SCRIPTORUM_HOME` overrides it.
+Setting `SCRIPTORUM_HOME` overrides it. Updates installed from inside the app live there too, in `app-versions/`; setting `SCRIPTORUM_NO_UPDATES=1` makes Scriptorum run its own version and ignore them.
 
 ## Running the tests
 
@@ -251,6 +259,9 @@ python -m pytest -m "not ui"
 The first runs everything; the second leaves out the window tests. The tests follow the project's Test Plan; each test name carries its plan ID, for example `test_T_FILE_08_…`. On Linux without a screen the window tests run headless (`QT_QPA_PLATFORM=offscreen` is set by the tests). The `tests` folder is a Python package, because spylls installs a package of its own called `tests`.
 
 ## Trying it by hand
+
+Try the start-up step and Go back to version by hand (F22, 0.6.7), without the project's key and without a web server. `tools/try_update.py prepare` copies this app into a scratch folder as "the installed app" with a throwaway key, makes a signed update pack of it as version 9.9.9, and installs that into a scratch Scriptorum folder, as Download and install does after the download. `start` runs the installed app there: Help ▸ About shows 9.9.9, and the Help menu offers Go back to version 0.6.7. `prepare --broken` makes a 9.9.9 that fails to start, so Scriptorum goes back by itself and says so. `clean` removes it all. Nothing in this folder or in your own Scriptorum folder changes.
+
 
 Pack the M6 part C4 sample, *The Ferryman's Debt*, with clues, a codex person with How to play, and loose cards to convert. Right-click Märta Holm's card and choose Convert to codex entry (it asks which type: Person, or the sample's own type River folk); right-click the second Ulrika to see the Link or new question. Try Insert ▸ Person, Insert ▸ Creature and Insert ▸ Clue:
 
@@ -354,8 +365,20 @@ npm run build:test
 | `tools/make_ornaments.py`, `tools/make_general_themes.py` | Draw the themes' ornaments; write the two general themes from the Vaesen templates |
 | `linux-kit/`, `tools/make_linux_kit.py` | The Linux kit for testers |
 | `tools/vendor_typst.py` | Copies a Typst package into a module and turns its package imports into relative paths |
+| `scriptorum/boot.py` | The start-up step: runs a newer verified version from the author's folder, or the installed one (F22) |
+| `scriptorum/core/packs.py`, `signing.py`, `update_key.py` | Update packs, the versions kept in the author's folder, the signature check and the project's public key (F22) |
+| `tools/release.py` | The release script: the signing key once, then the pack and the signed update file (F22, D12) |
+| `tools/try_update.py` | A test update for trying the start-up step and Go back by hand, with a throwaway key |
 
 ## Notes for this version
+
+- **Where an update goes.** A verified pack is unpacked into `<Scriptorum folder>/app-versions/<version>/` (the `scriptorum` package, `pack.json` with every file's checksum, and `pack.sig`). `state.json` beside them says which version runs, which one is the previous one, and which ones failed to start. At every start the folder is checked again file by file against its signed list, so a changed or damaged file means the installed version runs.
+- **What counts as starting.** A version has started once its window is ready, or when it closes normally. A version that raises an error before that is set aside at once and the previous one starts in the same go; one that crashes is set aside at the next start. The details go into the crash log folder (`update-start-….log`).
+- **Bundled modules in a pack** are the pack's own `scriptorum/bundled/`. During development they keep version 1.0.0, so the T-MOD-12 rule still applies: a changed bundled module replaces the installed copy at start-up, also when going back. From version 1 on, a changed bundled module gets a new version and is installed beside the old one.
+- **The installers (part D)** must carry cryptography and spylls with their package metadata, since the start-up step compares the versions a pack was made for with the ones the app runs on.
+
+Notes from M6 part C4 and earlier:
+
 
 - **Dragging** is `ui-src/drag.ts`: pointer events, a ghost copy and a drop line, no native drag-and-drop. The window tests drag the same way, with `tests/drag_js.py`.
 - **Skipped heading levels** are found by `skipped_headings` in `scriptorum/core/source.py` and reported by `Session.heading_warnings`.
