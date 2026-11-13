@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- F9 (M6): only Scriptorum's own bundled scripts may run. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' qrc:; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="styles.css">
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script defer src="dist/app.js"></script>
+</head>
+<body>
+<div class="app">
+
+<nav id="menubar" class="menubar" data-i18n-aria="app.name"></nav>
+
+<div id="startup-bar" class="startup-bar hidden" role="status">
+  <span id="startup-bar-text"></span>
+  <button id="startup-bar-check" type="button" class="small-btn" data-i18n="startup.checkInstallation"></button>
+  <button id="startup-bar-close" type="button" class="small-btn" data-i18n="startup.barDismiss"></button>
+</div>
+
+<div id="toolbar" class="toolbar hidden" role="toolbar" data-i18n-aria="toolbar.label">
+  <div class="seg" role="group" data-i18n-aria="toolbar.modes">
+    <button id="mode-visual" type="button" aria-pressed="true" data-i18n="toolbar.visual"></button>
+    <button id="mode-hybrid" type="button" aria-pressed="false" data-i18n="toolbar.hybrid"></button>
+    <button id="mode-source" type="button" aria-pressed="false" data-i18n="toolbar.source"></button>
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <select id="tb-style" class="tb-style" data-i18n-aria="toolbar.style" data-i18n-title="toolbar.style"></select>
+  <span class="sep" aria-hidden="true"></span>
+  <div id="tb-groups" class="tb-groups" role="group" data-i18n-aria="toolbar.insert"></div>
+  <div class="toolbar-end">
+    <button id="tb-preview" type="button" class="plain" aria-pressed="true" data-i18n="toolbar.preview"></button>
+    <button id="tb-handouts" type="button" class="plain" aria-pressed="false" data-i18n="toolbar.handoutsOnly" data-i18n-title="toolbar.handoutsOnlyHint"></button>
+    <button id="tb-fullscreen" type="button" class="plain tb-icon" aria-pressed="false" data-i18n-title="toolbar.fullScreen" data-i18n-aria="toolbar.fullScreen"></button>
+  </div>
+</div>
+
+<div id="tabbar" class="tabbar hidden" role="tablist" data-i18n-aria="tabs.label"></div>
+<div id="banner" class="banner hidden" role="status"></div>
+<div id="upgrade-banner" class="banner upgrade-banner hidden" role="status">
+  <span id="upgrade-banner-text"></span>
+  <button id="upgrade-banner-review" type="button" class="small-btn" data-i18n="upgrade.review"></button>
+  <button id="upgrade-banner-later" type="button" class="small-btn" data-i18n="upgrade.later"></button>
+</div>
+
+<main id="workspace" class="workspace hidden">
+  <aside class="navigator" data-i18n-aria="sidebar.label">
+    <div class="tabs" role="tablist">
+      <button id="nav-outline" type="button" role="tab" aria-selected="true" class="tab active" data-i18n="sidebar.outline" data-i18n-title="sidebar.outlineHint"></button>
+      <button id="nav-codex" type="button" role="tab" aria-selected="false" class="tab" data-i18n="sidebar.codex" data-i18n-title="sidebar.codexHint"></button>
+      <button id="nav-handouts" type="button" role="tab" aria-selected="false" class="tab" data-i18n="sidebar.handouts" data-i18n-title="sidebar.handoutsHint"></button>
+    </div>
+    <ol id="outline" class="outline"></ol>
+    <div id="codex-panel" class="codex-panel hidden"></div>
+    <div id="handouts-panel" class="handouts-panel hidden"></div>
+    <section id="scene-panel" class="scene-panel" data-i18n-aria="scene.title">
+      <h3 data-i18n="scene.title"></h3>
+      <div id="scene-panel-scene" class="scene-panel-scene"></div>
+      <ul id="scene-panel-list" class="scene-panel-list"></ul>
+    </section>
+  </aside>
+  <section id="editor-pane" class="editor-pane" data-i18n-aria="editor.label">
+    <div id="findbar" class="findbar hidden" role="search">
+      <input id="find-query" type="search" data-i18n-placeholder="find.query" data-i18n-aria="find.query">
+      <input id="find-replace" type="text" data-i18n-placeholder="find.replace" data-i18n-aria="find.replace">
+      <label class="check"><input id="find-case" type="checkbox"> <span data-i18n="find.matchCase"></span></label>
+      <button id="find-go" type="button" data-i18n="find.find"></button>
+      <button id="find-prev" type="button" class="icon" data-i18n-title="find.previous"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button id="find-next" type="button" class="icon" data-i18n-title="find.next"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button id="find-all" type="button" data-i18n="find.replaceAll"></button>
+      <span id="find-count" class="find-count" role="status"></span>
+      <button id="find-close" type="button" class="icon" data-i18n-title="find.close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <section id="worldview" class="worldview hidden">
+      <div class="worldview-head">
+        <button id="worldview-back" type="button" class="small-btn" data-i18n="world.back"></button>
+        <h2 id="worldview-title"></h2>
+      </div>
+      <div id="worldview-body" class="worldview-body"></div>
+    </section>
+    <div id="visual" class="visual"></div>
+    <div id="source" class="source hidden"></div>
+    <div id="hybrid" class="hybrid hidden">
+      <div id="hybrid-label" class="hybrid-label"></div>
+      <textarea id="hybrid-source" class="hybrid-source" spellcheck="false" wrap="soft" data-i18n-aria="hybrid.source"></textarea>
+      <div class="hybrid-hint" data-i18n="hybrid.hint"></div>
+    </div>
+  </section>
+  <section id="preview-pane" class="preview-pane" tabindex="0" data-i18n-aria="status.preview">
+    <div id="zoom-bar" class="zoom-bar" role="toolbar" data-i18n-aria="zoom.label">
+      <button id="zoom-out" type="button" class="zoom-step" data-i18n-title="zoom.out" data-i18n-aria="zoom.out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+      <output id="zoom-value" class="zoom-value" data-i18n-title="zoom.current"></output>
+      <button id="zoom-in" type="button" class="zoom-step" data-i18n-title="zoom.in" data-i18n-aria="zoom.in"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button id="zoom-fit-width" type="button" aria-pressed="true" data-i18n="zoom.fitWidth"></button>
+      <button id="zoom-whole-page" type="button" aria-pressed="false" data-i18n="zoom.wholePage"></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button id="zoom-spread" type="button" aria-pressed="false" data-i18n="zoom.spread"></button>
+      <button id="zoom-window" type="button" data-i18n="zoom.ownWindow"></button>
+    </div>
+    <div id="version-bar" class="version-bar hidden" role="status">
+      <span id="version-bar-text"></span>
+      <button id="version-cancel" type="button" data-i18n="version.cancel"></button>
+      <button id="version-apply" type="button" class="primary" data-i18n="version.apply"></button>
+    </div>
+    <div id="preview-error" class="preview-error hidden" role="alert"></div>
+    <div id="pages" class="pages"></div>
+  </section>
+</main>
+
+<footer id="statusbar" class="statusbar hidden" role="status" data-i18n-aria="status.label">
+  <span id="st-line"></span>
+  <span id="st-page"></span>
+  <span id="st-words"></span>
+  <span id="st-problems"></span>
+  <span id="st-flash" class="flash"></span>
+  <span id="st-export" class="end"></span>
+</footer>
+
+<section id="welcome" class="welcome hidden">
+  <div class="welcome-card">
+    <svg class="nib" width="44" height="62" viewBox="0 0 100 140" aria-hidden="true"><path d="M50 134 L24 72 C18 58 19 44 27 34 L31 10 Q50 4 69 10 L73 34 C81 44 82 58 76 72 Z" fill="#B08A4A" stroke="#6E5328" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="58" r="6" fill="#FFFDF8" stroke="#6E5328" stroke-width="2.5"/><path d="M50 64 V131" stroke="#6E5328" stroke-width="2.5"/></svg>
+    <h1 data-i18n="app.name"></h1>
+    <p class="lead" data-i18n="welcome.lead"></p>
+    <div class="welcome-actions">
+      <button id="w-new" type="button" class="primary" data-i18n="welcome.new"></button>
+      <button id="w-open" type="button" data-i18n="welcome.open"></button>
+      <button id="w-example" type="button" data-i18n="welcome.example"></button>
+    </div>
+    <h2 id="w-recent-title" data-i18n="welcome.recent"></h2>
+    <ul id="w-recent" class="recent"></ul>
+  </div>
+</section>
+
+<dialog id="new-dialog" class="dialog">
+  <form method="dialog">
+    <h2 data-i18n="dialog.newTitle"></h2>
+    <label class="form-row"><span data-i18n="dialog.titleLabel"></span><input id="new-title" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="dialog.gameSystem"></span><select id="new-system"></select></label>
+    <label class="form-row"><span data-i18n="dialog.theme"></span><select id="new-theme"></select></label>
+    <p id="new-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions">
+      <button id="new-cancel" type="button" data-i18n="dialog.cancel"></button>
+      <button id="new-create" type="submit" class="primary" data-i18n="dialog.create"></button>
+    </div>
+  </form>
+</dialog>
+
+<section id="settings" class="settings hidden" role="dialog" aria-modal="true" data-i18n-aria="settings.window">
+  <div class="settings-card settings-window">
+    <div class="settings-head">
+      <h2 data-i18n="settings.window"></h2>
+    </div>
+    <div class="settings-body">
+      <nav class="settings-nav" role="tablist">
+        <button id="sn-application" type="button" role="tab" data-section="application"><span data-i18n="settings.section.application"></span></button>
+        <button id="sn-colours" type="button" role="tab" data-section="colours"><span data-i18n="settings.section.colours"></span></button>
+        <button id="sn-modules" type="button" role="tab" data-section="modules"><span data-i18n="settings.section.modules"></span></button>
+        <button id="sn-adventure" type="button" role="tab" data-section="adventure"><span data-i18n="settings.section.adventure"></span><small id="sn-adventure-name"></small></button>
+      </nav>
+      <div class="settings-pages">
+        <div id="sp-application" class="settings-page hidden"></div>
+        <div id="sp-colours" class="settings-page hidden"></div>
+        <div id="sp-modules" class="settings-page hidden"></div>
+        <div id="sp-adventure" class="settings-page hidden">
+    <h3 data-i18n="settings.look"></h3>
+    <div class="settings-row"><span data-i18n="settings.gameSystem"></span><strong id="set-gameSystem"></strong><label class="version-pick"><span data-i18n="settings.version"></span><select id="set-gameSystemVersion" data-i18n-aria="settings.gameSystemVersion"></select></label></div>
+    <div class="settings-row"><span data-i18n="settings.themeLabel"></span><select id="set-theme"></select><label class="version-pick"><span data-i18n="settings.version"></span><select id="set-themeVersion" data-i18n-aria="settings.themeVersion"></select></label></div>
+    <p class="settings-note" data-i18n="settings.themeNote"></p>
+    <div class="settings-row"><span data-i18n="settings.secretFill"></span><select id="set-secretFill"></select></div>
+    <div class="settings-row"><span data-i18n="settings.language"></span><select id="set-language"></select></div>
+    <p class="settings-note" data-i18n="settings.languageNote"></p>
+    <h3 data-i18n="settings.titlePage"></h3>
+    <p class="settings-note" data-i18n="settings.titlePageNote"></p>
+    <label class="form-row"><span data-i18n="settings.field.title"></span><input id="set-title" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="settings.field.header"></span><input id="set-header" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="settings.field.subtitle"></span><input id="set-subtitle" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="settings.field.author"></span><input id="set-author" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="settings.field.description"></span><textarea id="set-description" rows="2"></textarea></label>
+    <label class="form-row"><span data-i18n="settings.field.extra"></span><textarea id="set-extra" rows="2"></textarea></label>
+    <h3 data-i18n="settings.page"></h3>
+    <div class="page-row">
+      <label class="form-row"><span data-i18n="settings.field.paper"></span><select id="set-paper"></select></label>
+      <span id="origin-paper" class="origin"></span>
+      <button id="reset-paper" type="button" class="link hidden" data-i18n="settings.useTheme"></button>
+    </div>
+    <div class="page-row">
+      <label class="form-row"><span data-i18n="settings.field.orientation"></span><select id="set-orientation"></select></label>
+      <span id="origin-orientation" class="origin"></span>
+      <button id="reset-orientation" type="button" class="link hidden" data-i18n="settings.useTheme"></button>
+    </div>
+    <div class="page-row">
+      <label class="form-row"><span data-i18n="settings.field.columns"></span><select id="set-columns"></select></label>
+      <span id="origin-columns" class="origin"></span>
+      <button id="reset-columns" type="button" class="link hidden" data-i18n="settings.useTheme"></button>
+    </div>
+    <div class="page-row margins-row">
+      <div class="form-row"><span data-i18n="settings.field.margins"></span>
+        <div class="margin-inputs">
+          <label><small data-i18n="settings.margin.top"></small><input id="set-margin-top" type="number" min="5" max="60" step="0.5"></label>
+          <label><small data-i18n="settings.margin.bottom"></small><input id="set-margin-bottom" type="number" min="5" max="60" step="0.5"></label>
+          <label><small data-i18n="settings.margin.inside"></small><input id="set-margin-inside" type="number" min="5" max="60" step="0.5"></label>
+          <label><small data-i18n="settings.margin.outside"></small><input id="set-margin-outside" type="number" min="5" max="60" step="0.5"></label>
+        </div>
+      </div>
+      <span id="origin-margin_mm" class="origin"></span>
+      <button id="reset-margin_mm" type="button" class="link hidden" data-i18n="settings.useTheme"></button>
+    </div>
+    <div class="settings-row"><button id="set-classical" type="button" class="small-btn" data-i18n="settings.classical"></button><span id="set-columnNote" class="settings-note"></span></div>
+    <label class="form-row"><span data-i18n="settings.field.pageHeader"></span><input id="set-pageHeader" type="text" autocomplete="off"></label>
+    <label class="form-row"><span data-i18n="settings.field.pageFooter"></span><input id="set-pageFooter" type="text" autocomplete="off"></label>
+    <label class="check settings-switch"><input id="set-pageNumbers" type="checkbox"> <span data-i18n="settings.field.pageNumbers"></span></label>
+    <h3 data-i18n="settings.pageStarts"></h3>
+    <p class="settings-note" data-i18n="settings.pageStartsNote"></p>
+    <label class="check settings-switch"><input id="set-compact" type="checkbox"> <span data-i18n="settings.compact"></span></label>
+    <div id="set-pageStart" class="page-start-grid"></div>
+    <h3 data-i18n="settings.printing"></h3>
+    <p class="settings-note" data-i18n="settings.printNote"></p>
+    <div class="settings-row"><span data-i18n="settings.booklet.order"></span><select id="set-bookletOrder"></select></div>
+    <div class="settings-row"><span data-i18n="settings.booklet.sheet"></span><select id="set-bookletSheet"></select></div>
+    <div class="settings-row"><span data-i18n="settings.bleed"></span><input id="set-bleed" type="number" min="0" max="5" step="0.5"></div>
+    <h3 data-i18n="settings.endOfBook"></h3>
+    <label class="check settings-switch"><input id="set-clueOverview" type="checkbox"> <span data-i18n="settings.clueOverview"></span></label>
+    <label class="check settings-switch"><input id="set-index" type="checkbox"> <span data-i18n="settings.index"></span></label>
+    <h3 data-i18n="settings.handouts"></h3>
+    <label class="check settings-switch"><input id="set-easyRead" type="checkbox"> <span data-i18n="settings.easyRead"></span></label>
+    <h3 data-i18n="settings.fonts"></h3>
+    <div class="settings-row"><button id="set-addFont" type="button" class="small-btn" data-i18n="menu.addFont"></button></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-foot">
+      <p id="settings-foot-note" class="settings-foot-note" role="alert"></p>
+      <button id="palette-cancel" type="button" class="small-btn hidden" data-i18n="dialog.cancel"></button>
+      <button id="palette-save" type="button" class="primary hidden" data-i18n="settings.colours.save"></button>
+      <button id="settings-close" type="button" class="primary" data-i18n="settings.done"></button>
+    </div>
+  </div>
+</section>
+
+<div id="popover" class="popover hidden" role="dialog" data-i18n-aria="popover.label">
+  <div class="popover-head">
+    <span data-i18n="popover.label"></span>
+    <button id="popover-close" type="button" class="icon" data-i18n-title="popover.close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div id="popover-body" class="popover-body"></div>
+</div>
+
+<dialog id="recover-dialog" class="dialog">
+  <h2 data-i18n="recover.title"></h2>
+  <p data-i18n="recover.text"></p>
+  <ul id="recover-list" class="recover-list"></ul>
+  <div class="dialog-actions"><button id="recover-later" type="button" data-i18n="recover.later"></button></div>
+</dialog>
+
+<dialog id="revert-dialog" class="dialog">
+  <h2 data-i18n="revert.title"></h2>
+  <p data-i18n="revert.text"></p>
+  <p id="revert-empty" class="settings-note" data-i18n="revert.empty"></p>
+  <ul id="revert-list" class="revert-list"></ul>
+  <div class="dialog-actions"><button id="revert-cancel" type="button" data-i18n="dialog.cancel"></button></div>
+</dialog>
+
+<dialog id="message-dialog" class="dialog">
+  <p id="message-text"></p>
+  <div class="dialog-actions"><button id="message-ok" type="button" class="primary" data-i18n="dialog.ok"></button></div>
+</dialog>
+
+<dialog id="prompt-dialog" class="dialog">
+  <form method="dialog">
+    <h2 id="prompt-title"></h2>
+    <label class="form-row"><span id="prompt-label"></span><input id="prompt-input" type="text" autocomplete="off"></label>
+    <label id="prompt-choice-row" class="form-row"><span id="prompt-choice-label"></span><select id="prompt-choice"></select></label>
+    <div class="dialog-actions">
+      <button id="prompt-cancel" type="button" data-i18n="dialog.cancel"></button>
+      <button id="prompt-ok" type="submit" class="primary" data-i18n="dialog.ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="upgrade-dialog" class="dialog wide">
+  <h2 data-i18n="upgrade.title"></h2>
+  <p data-i18n="upgrade.text"></p>
+  <div class="upgrade-scroll"><table class="upgrade-table"><tbody id="upgrade-list"></tbody></table></div>
+  <div class="dialog-actions">
+    <button id="upgrade-later" type="button" data-i18n="upgrade.later"></button>
+    <button id="upgrade-apply" type="button" class="primary" data-i18n="upgrade.apply"></button>
+  </div>
+</dialog>
+
+<dialog id="ask-dialog" class="dialog">
+  <p id="ask-text"></p>
+  <div class="dialog-actions">
+    <button id="ask-cancel" type="button"></button>
+    <button id="ask-no" type="button"></button>
+    <button id="ask-yes" type="button" class="primary"></button>
+  </div>
+</dialog>
+
+<!-- F9 (M6 part B): Help ▸ About Scriptorum, with its licence tabs. -->
+<dialog id="about-dialog" class="dialog wide about-dialog">
+  <div class="about-tabs" role="tablist">
+    <button id="about-tab-about" type="button" role="tab" data-tab="about" data-i18n="about.tabAbout"></button>
+    <button id="about-tab-hood" type="button" role="tab" data-tab="hood" data-i18n="about.tabHood"></button>
+    <button id="about-tab-licences" type="button" role="tab" data-tab="licences" data-i18n="about.tabLicences"></button>
+  </div>
+  <section id="about-page-about" class="about-page" role="tabpanel">
+    <div class="about-head">
+      <span class="about-logo" aria-hidden="true"></span>
+      <div>
+        <h2 data-i18n="app.name"></h2>
+        <p id="about-version" class="settings-note"></p>
+      </div>
+    </div>
+    <p data-i18n="about.what"></p>
+    <p id="about-idea"></p>
+    <p data-i18n="about.free"></p>
+    <button id="about-gpl" type="button" class="small-btn" data-i18n="about.showGpl"></button>
+  </section>
+  <section id="about-page-hood" class="about-page hidden" role="tabpanel">
+    <p class="settings-note" data-i18n="about.hoodNote"></p>
+    <div id="about-hood" class="about-hood"></div>
+  </section>
+  <section id="about-page-licences" class="about-page hidden" role="tabpanel">
+    <p class="settings-note" data-i18n="about.licencesNote"></p>
+    <ul id="about-licences" class="about-licences"></ul>
+  </section>
+  <div id="about-text-box" class="about-text-box hidden">
+    <div class="about-text-head"><strong id="about-text-title"></strong><button id="about-text-back" type="button" class="small-btn" data-i18n="about.back"></button></div>
+    <pre id="about-text" class="about-text" tabindex="0"></pre>
+  </div>
+  <div class="dialog-actions">
+    <button id="about-close" type="button" class="primary" data-i18n="dialog.close"></button>
+  </div>
+</dialog>
+
+<dialog id="check-dialog" class="dialog wide">
+  <h2 data-i18n="startup.checkInstallation"></h2>
+  <p id="check-version" class="settings-note"></p>
+  <ul id="check-list" class="check-list"></ul>
+  <p id="check-summary" class="settings-note" role="status"></p>
+  <ul id="check-themes" class="check-list"></ul>
+  <div class="dialog-actions">
+    <button id="check-copy" type="button" data-i18n="startup.copyDetails"></button>
+    <button id="check-selftest" type="button" data-i18n="startup.selfTest"></button>
+    <button id="check-close" type="button" class="primary" data-i18n="dialog.close"></button>
+  </div>
+</dialog>
+
+<!-- F21 (M6 part C): Help ▸ Check for updates…; nothing is downloaded. -->
+<dialog id="update-dialog" class="dialog">
+  <h2 data-i18n="update.title"></h2>
+  <p id="update-text" role="status"></p>
+  <div id="update-note-box" class="update-note hidden">
+    <h3 data-i18n="update.noteLabel"></h3>
+    <p id="update-note"></p>
+  </div>
+  <div class="dialog-actions">
+    <button id="update-close" type="button" data-i18n="dialog.close"></button>
+    <button id="update-open" type="button" class="primary hidden" data-i18n="update.open"></button>
+  </div>
+</dialog>
+
+<!-- F19 (M5): the author guides, from the interface-language module. -->
+<dialog id="guide-dialog" class="dialog guide-dialog" aria-labelledby="guide-title">
+  <div class="guide-layout">
+    <nav class="guide-nav" data-i18n-aria="guide.contents">
+      <p class="guide-nav-title" data-i18n="guide.contents"></p>
+      <ol id="guide-toc" class="guide-toc"></ol>
+    </nav>
+    <article id="guide-text" class="guide-text" tabindex="0"></article>
+  </div>
+  <div class="dialog-actions">
+    <button id="guide-other" type="button"></button>
+    <button id="guide-close" type="button" class="primary" data-i18n="dialog.close"></button>
+  </div>
+</dialog>
+
+<div id="warnings-panel" class="warnings-panel hidden" role="dialog" data-i18n-aria="status.warningsTitle">
+  <div class="warnings-head"><strong data-i18n="status.warningsTitle"></strong><button id="warnings-close" type="button" class="small-btn" data-i18n="status.warningsClose"></button></div>
+  <p class="settings-note" data-i18n="status.warningsHint"></p>
+  <ul id="warnings-list" class="warnings-list"></ul>
+</div>
+
+<div id="menu-popup" class="popup hidden" role="menu"></div>
+
+</div>
+</body>
+</html>

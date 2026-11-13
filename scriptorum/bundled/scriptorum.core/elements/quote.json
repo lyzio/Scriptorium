@@ -1,0 +1,83 @@
+{
+  "id": "quote",
+  "name": "element.quote",
+  "category": "block",
+  "body": "blocks",
+  "fields": [
+    {
+      "name": "title",
+      "kind": "text",
+      "required": false,
+      "label": "field.quote.title"
+    },
+    {
+      "name": "signer",
+      "kind": "codex",
+      "types": [
+        "person"
+      ],
+      "required": false,
+      "label": "field.quote.signer"
+    },
+    {
+      "name": "signature",
+      "kind": "text",
+      "required": false,
+      "label": "field.quote.signature"
+    },
+    {
+      "name": "description",
+      "kind": "text",
+      "required": false,
+      "label": "field.quote.description"
+    },
+    {
+      "name": "handwriting",
+      "kind": "choice",
+      "options_from": "handwriting",
+      "required": false,
+      "label": "field.quote.handwriting"
+    },
+    {
+      "name": "tilt",
+      "kind": "number",
+      "min": -5,
+      "max": 5,
+      "required": false,
+      "default": 0,
+      "label": "field.quote.tilt"
+    },
+    {
+      "name": "tint",
+      "kind": "bool",
+      "required": false,
+      "default": true,
+      "label": "field.quote.tint"
+    }
+  ],
+  "variants": [
+    {
+      "id": "framed",
+      "label": "variant.quote.framed"
+    },
+    {
+      "id": "scrap",
+      "label": "variant.quote.scrap"
+    },
+    {
+      "id": "plain",
+      "label": "variant.quote.plain"
+    }
+  ],
+  "default_variant": "framed",
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": null,
+  "body_required": true,
+  "keep_lines": true,
+  "toolbar_group": "boxes",
+  "spec": "11.11 Quote: never a handout (decided 6 November 2026). Each line of a verse is a paragraph of its own, so line breaks are kept.",
+  "allow": null
+}

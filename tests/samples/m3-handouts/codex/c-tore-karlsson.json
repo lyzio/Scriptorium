@@ -1,0 +1,12 @@
+{
+  "id": "c-tore-karlsson",
+  "type": "person",
+  "fields": {
+    "name": "Tore Karlsson",
+    "mood": "Orolig",
+    "description": "Gästgivare i Vidtsköfle.",
+    "handwriting": "Homemade Apple"
+  },
+  "folder": "",
+  "tags": []
+}

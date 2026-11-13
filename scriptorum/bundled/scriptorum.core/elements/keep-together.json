@@ -1,0 +1,18 @@
+{
+  "id": "keep-together",
+  "name": "element.keep-together",
+  "category": "block",
+  "body": "blocks",
+  "fields": [],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": null,
+  "always_on": true,
+  "renderer": false,
+  "toolbar_group": "structure",
+  "allow": null,
+  "spec": "F7.4 layout marker: never split this. What it holds is never split across pages or columns."
+}

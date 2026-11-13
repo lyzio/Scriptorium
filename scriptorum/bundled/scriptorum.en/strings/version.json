@@ -1,0 +1,7 @@
+{
+  "previewing": "Previewing {name} {version}. Nothing in the adventure has changed yet.",
+  "apply": "Apply",
+  "cancel": "Cancel",
+  "majorWarning": "{name} {version} is a new main version (you use {from}). The adventure may use things the new version lacks; those are drawn in a plain frame, with a warning. Scriptorum cannot convert the adventure. Try it in the preview?",
+  "try": "Try it"
+}

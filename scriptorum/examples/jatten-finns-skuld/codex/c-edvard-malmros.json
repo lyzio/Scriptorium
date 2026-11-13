@@ -1,0 +1,13 @@
+{
+  "id": "c-edvard-malmros",
+  "type": "person",
+  "fields": {
+    "name": "Edvard Malmros",
+    "description": "Konduktör och byggnadsledare för restaureringen, trettiofem år, ambitiös och övertygad om att blindheten beror på kalkdamm. ”Vi bygger inte på sägner, mina herrar. Vi bygger på granit.”",
+    "linked-to": [
+      "c-byggkontoret"
+    ]
+  },
+  "folder": "Personer",
+  "tags": []
+}

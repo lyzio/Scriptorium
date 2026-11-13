@@ -1,0 +1,5 @@
+{
+  "title": "Revert to previous version",
+  "text": "Choose a snapshot. Its text replaces the current text; you can undo this, and the file changes only when you save.",
+  "empty": "No snapshots yet. A snapshot is kept every 15 minutes while there are changes."
+}

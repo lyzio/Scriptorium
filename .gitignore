@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+ui-src/node_modules/
+*.egg-info/
+build/
+dist/
+!scriptorum/ui/dist/
+scenario-output/

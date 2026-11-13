@@ -1,0 +1,22 @@
+{
+  "on": [
+    "scene",
+    "read-aloud",
+    "information",
+    "person",
+    "creature",
+    "countdown",
+    "countdown-step",
+    "dice",
+    "check",
+    "handout",
+    "card",
+    "mention",
+    "see",
+    "map",
+    "relationship-chart",
+    "box",
+    "quote",
+    "pacing"
+  ]
+}

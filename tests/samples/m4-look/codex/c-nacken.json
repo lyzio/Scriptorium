@@ -1,0 +1,19 @@
+{
+  "id": "c-nacken",
+  "type": "creature",
+  "fields": {
+    "name": "Näcken",
+    "type": "Vaesen",
+    "might": 3,
+    "body-control": 4,
+    "magic": 5,
+    "manipulation": 4,
+    "fear": 3,
+    "description": "En spelman i forsen, vacker och farlig.",
+    "magic-powers": "*Lockelse:* Fear-slag för den som hör fiolen.",
+    "weaknesses": "Stål i vattnet.",
+    "banishment": "Kasta en stålnål i forsen och ropa hans namn."
+  },
+  "folder": "Creatures",
+  "tags": []
+}

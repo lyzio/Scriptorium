@@ -1,0 +1,8 @@
+{
+  "name": "Scriptorum",
+  "windowTitle": "{title} — Scriptorum",
+  "windowTitleDirty": "{title} (unsaved) — Scriptorum",
+  "untitled": "Untitled adventure",
+  "windowTitleReadOnly": "{title} (read-only) — Scriptorum",
+  "previewWindowTitle": "{title} — Preview — Scriptorum"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "c-drowned-bell-ringer",
+  "type": "creature",
+  "fields": {
+    "name": "The drowned bell-ringer",
+    "type": "Vaesen",
+    "might": 4,
+    "body-control": 2,
+    "magic": 3,
+    "manipulation": 3,
+    "fear": 2,
+    "description": "A sailor of the Hoppet, grey with salt.",
+    "weaknesses": "Daylight and church bells.",
+    "banishment": "Ring the chapel bell at dawn while his name is read aloud."
+  },
+  "folder": "Creatures",
+  "tags": []
+}

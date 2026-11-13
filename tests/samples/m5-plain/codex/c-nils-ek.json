@@ -1,0 +1,14 @@
+{
+  "id": "c-nils-ek",
+  "type": "person",
+  "fields": {
+    "name": "Nils Ek",
+    "mood": "Frightened",
+    "description": "Sexton of the fishermen's chapel.",
+    "linked-to": [
+      "c-the-chapel"
+    ]
+  },
+  "folder": "People",
+  "tags": []
+}

@@ -1,0 +1,14 @@
+{
+  "title_page": {
+    "header": "A Plain sample",
+    "subtitle": "Every core element in the Plain game system and Plain theme",
+    "author": "Scriptorum project",
+    "description": "The bell has not rung in forty years.",
+    "extra": "For three to five players. Å, ä and ö print in every font."
+  },
+  "end_matter": {
+    "clue_overview": true,
+    "index": true
+  },
+  "easy_read": true
+}

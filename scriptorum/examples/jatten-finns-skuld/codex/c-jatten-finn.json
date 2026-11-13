@@ -1,0 +1,16 @@
+{
+  "id": "c-jatten-finn",
+  "type": "creature",
+  "fields": {
+    "name": "Jätten Finn",
+    "type": "Väsen",
+    "might": 6,
+    "body-control": 2,
+    "magic": 3,
+    "manipulation": 2,
+    "fear": 4,
+    "description": "En jätte av grå kalksten som sakta lösgör sig från sin pelare. Han rör sig långsamt, men varje steg får valven att skaka. Han talar sällan, och när han gör det är det om skulden."
+  },
+  "folder": "Väsen",
+  "tags": []
+}

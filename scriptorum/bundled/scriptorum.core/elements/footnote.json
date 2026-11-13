@@ -1,0 +1,25 @@
+{
+  "id": "footnote",
+  "name": "element.footnote",
+  "category": "inline",
+  "body": "none",
+  "fields": [
+    {
+      "name": "text",
+      "kind": "text",
+      "required": true,
+      "label": "field.footnote.text"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "shortcut": null,
+  "editor": "chip",
+  "inline_form": "call",
+  "inline_editor": "chip",
+  "renderer": false,
+  "always_on": true,
+  "spec": "F7.7 (M5): a footnote, written inside a sentence; it prints at the foot of the page with its number."
+}

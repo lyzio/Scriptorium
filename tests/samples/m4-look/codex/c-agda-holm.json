@@ -1,0 +1,12 @@
+{
+  "id": "c-agda-holm",
+  "type": "person",
+  "fields": {
+    "name": "Agda Holm",
+    "mood": "Vaksam",
+    "description": "Mjölnarens änka vid Kvarnån.",
+    "handwriting": "Caveat"
+  },
+  "folder": "People",
+  "tags": []
+}

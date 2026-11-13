@@ -1,0 +1,16 @@
+{
+  "id": "c-gerda",
+  "type": "creature",
+  "fields": {
+    "name": "Gerda under backen",
+    "type": "Väsen",
+    "might": 4,
+    "body-control": 1,
+    "magic": 4,
+    "manipulation": 3,
+    "fear": 2,
+    "description": "Jättens dotter, som inte följde med far ner i kryptan. Hon är enorm men sitter alltid stilla, halvt inväxt i berget, med mossa i håret. Hon sjunger samma vaggvisa som modern en gång sjöng, för att hon inte kan någon annan."
+  },
+  "folder": "Väsen",
+  "tags": []
+}

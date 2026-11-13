@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "app": "0.5.1",
+  "title": "The Bell at Skärvik",
+  "game_system": {
+    "id": "scriptorum.plain-system",
+    "version": "1.0.0"
+  },
+  "theme": {
+    "id": "scriptorum.plain",
+    "version": "1.0.0"
+  },
+  "modules": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.plain-system",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.plain",
+      "version": "1.0.0"
+    }
+  ],
+  "chapters": [
+    "text/chapter-01.typ"
+  ],
+  "created": "2026-11-11T20:00:00+00:00",
+  "modified": "2026-11-11T20:00:00+00:00"
+}

@@ -1,0 +1,5 @@
+{
+  "openElsewhere": "This adventure is open in another window, so it opened read-only here. Use Save as to keep a copy you can edit.",
+  "protected": "Protected mode. You need these modules to edit or export this adventure: {modules}. Nothing in it is changed. Install or enable them in File ▸ Settings… ▸ Modules.",
+  "protected.disabled": "{module}, disabled"
+}

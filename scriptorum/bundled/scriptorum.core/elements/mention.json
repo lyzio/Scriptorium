@@ -1,0 +1,26 @@
+{
+  "id": "mention",
+  "name": "element.mention",
+  "category": "inline",
+  "body": "none",
+  "fields": [
+    {
+      "name": "entry",
+      "kind": "codex",
+      "types": null,
+      "required": true,
+      "label": "field.mention.entry"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "shortcut": null,
+  "editor": "chip",
+  "inline_form": "call",
+  "inline_editor": "chip",
+  "codex_ref": "mention",
+  "renderer": false,
+  "toolbar_group": "people"
+}

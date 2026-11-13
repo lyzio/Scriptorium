@@ -1,0 +1,10 @@
+{
+  "id": "c-byggkontoret",
+  "type": "place",
+  "fields": {
+    "name": "Byggkontoret",
+    "description": "Byggkontoret i kapitelhuset, med ritningarna till restaureringen."
+  },
+  "folder": "Platser",
+  "tags": []
+}

@@ -1,0 +1,41 @@
+{
+  "id": "information",
+  "name": "element.information",
+  "category": "both",
+  "body": "rich",
+  "fields": [
+    {
+      "name": "known-by",
+      "kind": "codex-list",
+      "types": [
+        "person"
+      ],
+      "required": false,
+      "label": "field.information.known-by"
+    }
+  ],
+  "variants": [
+    {
+      "id": "secret",
+      "label": "variant.information.secret"
+    },
+    {
+      "id": "public",
+      "label": "variant.information.public"
+    },
+    {
+      "id": "hint",
+      "label": "variant.information.hint"
+    }
+  ],
+  "default_variant": "secret",
+  "known_by": "automatic-in-card, plus known-by (F3.5, 11.3)",
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "inline_editor": "chip",
+  "shortcut": null,
+  "body_required": true,
+  "toolbar_group": "boxes"
+}

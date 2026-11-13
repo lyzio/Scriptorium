@@ -1,0 +1,13 @@
+{
+  "id": "c-gustaf-lindell",
+  "type": "person",
+  "fields": {
+    "name": "Gustaf Lindell",
+    "description": "Docent i nordisk fornkunskap, samlare och skvallrare. Han äger en avskrift av Wolfs krönika och har stenfingret i en glasmonter. ”Ett äkta romanskt fragment! Ni förstår väl att det inte kan lämna mina samlingar.”",
+    "linked-to": [
+      "c-lindells-vaning"
+    ]
+  },
+  "folder": "Personer",
+  "tags": []
+}

@@ -1,0 +1,14 @@
+{
+  "id": "c-johanna-strandh",
+  "type": "person",
+  "fields": {
+    "name": "Johanna Strandh",
+    "description": "Kyrkvaktmästare, änka, runt femtio. Praktisk, troende och inte lättskrämd, men nu rädd. Hon har nycklarna till kryptan och till kapitelhusets vind. ”Jag har sopat kring hans fötter i trettio år. Han har aldrig förr haft damm i handflatorna.”",
+    "linked-to": [
+      "c-domkyrkan"
+    ],
+    "handwriting": "Homemade Apple"
+  },
+  "folder": "Personer",
+  "tags": []
+}

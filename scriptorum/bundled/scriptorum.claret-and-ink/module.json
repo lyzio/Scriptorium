@@ -1,0 +1,14 @@
+{
+  "id": "scriptorum.claret-and-ink",
+  "kind": "palette",
+  "name": "Claret & Ink",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "The app's colours in light and dark mode: parchment, ink and claret, with sea teal for selection and verdigris for OK signs.",
+  "requires": []
+}

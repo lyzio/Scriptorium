@@ -1,0 +1,15 @@
+Vaesen — the Vaesen theme for Scriptorum
+
+Copyright (C) 2026 Scriptorum project. Licensed under the GNU General Public
+License, version 3 or later (GPL-3.0-or-later); see COPYING in Scriptorum.
+
+An unofficial, fan-made look, not affiliated with or endorsed by Free League
+Publishing, the owners of the Vaesen game. It uses no text, artwork or logos
+from any publisher (D8). Its frames, curls, scroll, bullets and hourglass are
+the project's own drawings (tools/make_ornaments.py).
+
+Fonts in fonts/ keep their own licences (SIL OFL 1.1), each in the licence
+file beside the font. Berolina by Peter Wiegel is offered under the GPL and
+the SIL OFL. The relationship chart uses fletcher 0.5.8 (MIT), CeTZ 0.3.4
+(LGPL-3.0-or-later) and oxifmt 0.2.1 (MIT-0) in vendor/, each with its
+licence file.

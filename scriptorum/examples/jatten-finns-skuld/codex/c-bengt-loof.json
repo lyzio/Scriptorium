@@ -1,0 +1,13 @@
+{
+  "id": "c-bengt-loof",
+  "type": "person",
+  "fields": {
+    "name": "Nattväktaren Bengt Lööf",
+    "description": "Gammal nattväktare som har gått samma runda i tjugo år. Han hörde sången från Helgonabacken två nätter i rad och kan visa exakt var. ”Det var en kvinnoröst. Fast för djup för en kvinna.”",
+    "linked-to": [
+      "c-helgonabacken"
+    ]
+  },
+  "folder": "Personer",
+  "tags": []
+}

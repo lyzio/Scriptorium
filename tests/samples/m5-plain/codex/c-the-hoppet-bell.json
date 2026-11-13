@@ -1,0 +1,12 @@
+{
+  "id": "c-the-hoppet-bell",
+  "type": "clue",
+  "fields": {
+    "name": "The bell of the Hoppet",
+    "description": "The ringing comes from the wreck of the Hoppet, sunk forty years ago."
+  },
+  "folder": "",
+  "tags": [
+    "main"
+  ]
+}

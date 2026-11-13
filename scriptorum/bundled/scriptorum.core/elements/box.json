@@ -1,0 +1,24 @@
+{
+  "id": "box",
+  "name": "element.box",
+  "category": "block",
+  "body": "blocks",
+  "fields": [
+    {
+      "name": "title",
+      "kind": "text",
+      "required": false,
+      "label": "field.box.title"
+    }
+  ],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": null,
+  "body_required": true,
+  "toolbar_group": "boxes",
+  "spec": "11.10 Box: a framed text box; bold text at the start of a line prints as a label in capitals. Its body holds paragraphs and tables (a list is kept as it is written).",
+  "allow": null
+}

@@ -1,0 +1,10 @@
+{
+  "id": "c-the-chapel",
+  "type": "place",
+  "fields": {
+    "name": "The chapel",
+    "description": "The fishermen's chapel on the hill, with a bell that has not rung in forty years."
+  },
+  "folder": "Places",
+  "tags": []
+}

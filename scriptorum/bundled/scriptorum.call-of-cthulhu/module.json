@@ -1,0 +1,19 @@
+{
+  "id": "scriptorum.call-of-cthulhu",
+  "kind": "theme",
+  "name": "Call of Cthulhu",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "A general theme for any game system: 1920s cosmic horror after H. P. Lovecraft's public-domain stories, in ink black and sepia with a single sickly-green accent, IM Fell English headings, EB Garamond text and Special Elite typewriter labels, an occult sigil, corner brackets and green diamonds. An unofficial, fan-made look, not affiliated with or endorsed by the owners of the work or game it is named after. Call of Cthulhu is a game by Chaosium.",
+  "requires": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.x"
+    }
+  ]
+}

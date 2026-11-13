@@ -1,0 +1,14 @@
+{
+  "id": "relationship-chart",
+  "name": "element.relationship-chart",
+  "category": "block",
+  "body": "none",
+  "fields": [],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "shortcut": null,
+  "editor": "frame",
+  "toolbar_group": "handouts"
+}

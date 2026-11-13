@@ -1,0 +1,70 @@
+{
+  "id": "scene",
+  "name": "element.scene",
+  "category": "block",
+  "body": "blocks",
+  "allow": null,
+  "fields": [
+    {
+      "name": "title",
+      "kind": "text",
+      "required": true,
+      "label": "field.scene.title"
+    },
+    {
+      "name": "place",
+      "kind": "codex",
+      "types": [
+        "place"
+      ],
+      "required": false,
+      "label": "field.scene.place"
+    },
+    {
+      "name": "location",
+      "kind": "text",
+      "required": false,
+      "label": "field.scene.location",
+      "legacy": true
+    },
+    {
+      "name": "people",
+      "kind": "codex-list",
+      "types": [
+        "person"
+      ],
+      "required": false,
+      "label": "field.scene.people"
+    },
+    {
+      "name": "present",
+      "kind": "text",
+      "required": false,
+      "label": "field.scene.present",
+      "legacy": true
+    },
+    {
+      "name": "type",
+      "kind": "text",
+      "required": false,
+      "label": "field.scene.type"
+    },
+    {
+      "name": "id",
+      "kind": "id",
+      "required": false,
+      "hidden": true,
+      "label": "field.scene.id"
+    }
+  ],
+  "variants": [],
+  "page_start": "always",
+  "page_start_switchable": true,
+  "numbered": true,
+  "outline": true,
+  "handout": false,
+  "editor": "form",
+  "shortcut": "Ctrl+Shift+S",
+  "anchor": true,
+  "toolbar_group": "structure"
+}

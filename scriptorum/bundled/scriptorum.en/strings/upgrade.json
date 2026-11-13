@@ -1,0 +1,18 @@
+{
+  "title": "Link text to the codex",
+  "text": "Since this adventure was written, places, people and writers can be codex entries. Choose which text to turn into links. Nothing else changes, and you can undo it in one step.",
+  "apply": "Link the chosen text",
+  "later": "Not now",
+  "create": "New {type}",
+  "createAs": "New entry of type",
+  "linkTo": "Link to “{title}”",
+  "line": "line {line}",
+  "done": "{linked} links made, {created} new codex entries.",
+  "nothing": "There is no text left to link to the codex.",
+  "field.scene.location": "Scene · Location",
+  "field.scene.present": "Scene · People present",
+  "field.person.linked-to": "Person · Linked to",
+  "field.handout.written-by": "Handout · Written by",
+  "banner": "This adventure has {count} places, people or writers written as text. They can now be codex entries.",
+  "review": "Review…"
+}

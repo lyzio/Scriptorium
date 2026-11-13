@@ -1,0 +1,80 @@
+{
+  "id": "creature",
+  "name": "element.creature",
+  "category": "block",
+  "body": "none",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "text",
+      "required": true,
+      "label": "field.creature.name"
+    },
+    {
+      "name": "type",
+      "kind": "text",
+      "required": false,
+      "label": "field.creature.type"
+    },
+    {
+      "name": "description",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.description"
+    },
+    {
+      "name": "stats",
+      "kind": "stats",
+      "stat_block": "creature"
+    },
+    {
+      "name": "skills",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.skills",
+      "section": true
+    },
+    {
+      "name": "magic-powers",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.magic-powers",
+      "section": true
+    },
+    {
+      "name": "attacks",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.attacks",
+      "section": true
+    },
+    {
+      "name": "weaknesses",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.weaknesses",
+      "section": true
+    },
+    {
+      "name": "conditions",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.conditions",
+      "section": true
+    },
+    {
+      "name": "banishment",
+      "kind": "rich",
+      "required": false,
+      "label": "field.creature.banishment",
+      "section": true
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": "between-sections",
+  "handout": false,
+  "editor": "form",
+  "shortcut": null,
+  "toolbar_group": "people"
+}

@@ -1,0 +1,18 @@
+{
+  "build.genericFrame": "The theme {theme} has no design for “{element}”, so it is drawn in a plain frame.",
+  "build.typst": "{message}",
+  "build.emptyElement": "{element} is empty, so it prints only its label.",
+  "build.brokenReference": "The codex has no entry “{entry}”; “?” is printed instead.",
+  "build.missingTranslation": "{language} lacks {count} printed words of {module} ({words}); they print in English.",
+  "map.lowResolution": "The map “{map}” is only {dpi} dpi at its printed size. Print needs 300 dpi.",
+  "paper.coloured": "The paper style “{paper}” of the theme {theme} colours the sheet. Handout paper must stay white.",
+  "paper.tooDark": "The stains of the paper style “{paper}” of the theme {theme} are too dark to print lightly.",
+  "handout.long": "Handout {number} needs {sheets} sheets in the player PDF: unusually long for something handed to players.",
+  "preflight.noSwedish": "The font {font} has no å, ä or ö.",
+  "preflight.lowResolution": "The image {image} prints at only {dpi} dpi; 300 dpi or more prints sharply.",
+  "preflight.noImageDescription": "The image {image} has no description for screen readers.",
+  "preflight.noMapDescription": "The map {map} has no description for screen readers.",
+  "preflight.portraitLowResolution": "The portrait of {person} prints at only {dpi} dpi; 300 dpi or more prints sharply.",
+  "preflight.noPortraitDescription": "The portrait of {person} has no description for screen readers.",
+  "heading.skipsLevel": "The heading “{title}” skips a level: it is a Sub-heading {from} with no Sub-heading {sub} above it in its scene. Raise it to Sub-heading {sub}."
+}

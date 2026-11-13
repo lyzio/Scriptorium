@@ -1,0 +1,24 @@
+{
+  "title_page": {
+    "subtitle": "Ett tillgängligt prov: beskrivningar, språk och struktur",
+    "author": "Scriptorum project"
+  },
+  "page": {
+    "header": "The Lighthouse Keeper's Log",
+    "footer": "Print sample",
+    "margin_mm": {
+      "top": 18,
+      "bottom": 22,
+      "inside": 16,
+      "outside": 20
+    }
+  },
+  "page_start": {
+    "box": "always"
+  },
+  "print": {
+    "booklet_order": "fold",
+    "bleed_mm": 3
+  },
+  "language": "sv"
+}

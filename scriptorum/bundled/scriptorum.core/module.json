@@ -1,0 +1,36 @@
+{
+  "id": "scriptorum.core",
+  "kind": "element-kit",
+  "name": "Core elements",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "Every element kind, for any game system: scenes, read-aloud texts, Information, people, creatures, countdowns, dice, checks, handouts, boxes, quotes, pacing notes, codex cards and references, maps, the relationship chart and the layout markers; the built-in codex types Person, Place and Clue; and the six handwriting hands, so every theme offers them (F8). A game system turns on the elements it needs (9.3).",
+  "requires": [],
+  "element_order": [
+    "scene",
+    "read-aloud",
+    "information",
+    "person",
+    "creature",
+    "countdown",
+    "countdown-step",
+    "dice",
+    "check",
+    "handout",
+    "box",
+    "quote",
+    "pacing",
+    "card",
+    "mention",
+    "see",
+    "map",
+    "relationship-chart",
+    "page-break",
+    "column-break"
+  ]
+}

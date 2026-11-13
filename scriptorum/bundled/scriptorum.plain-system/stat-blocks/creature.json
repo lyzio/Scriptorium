@@ -1,0 +1,13 @@
+{
+  "element": "creature",
+  "stats": [],
+  "free_stats": true,
+  "sections": [
+    "skills",
+    "magic-powers",
+    "attacks",
+    "weaknesses",
+    "conditions",
+    "banishment"
+  ]
+}

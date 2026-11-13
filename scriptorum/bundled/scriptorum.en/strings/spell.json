@@ -1,0 +1,6 @@
+{
+  "suggestions": "Spelling: {word}",
+  "looking": "Looking for suggestions…",
+  "none": "No suggestions",
+  "unavailable": "Spell check is unavailable: its dictionaries or the spylls library are missing. See Help ▸ Check installation."
+}

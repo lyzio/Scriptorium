@@ -1,0 +1,10 @@
+{
+  "id": "c-skarvik-harbour",
+  "type": "place",
+  "fields": {
+    "name": "Skärvik harbour",
+    "description": "A small harbour of tarred jetties, quiet since Sunday."
+  },
+  "folder": "Places",
+  "tags": []
+}

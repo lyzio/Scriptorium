@@ -1,0 +1,26 @@
+{
+  "id": "see",
+  "name": "element.see",
+  "category": "inline",
+  "body": "none",
+  "fields": [
+    {
+      "name": "entry",
+      "kind": "codex",
+      "types": null,
+      "required": true,
+      "label": "field.see.entry"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "shortcut": null,
+  "editor": "chip",
+  "inline_form": "call",
+  "inline_editor": "chip",
+  "codex_ref": "see",
+  "renderer": false,
+  "toolbar_group": "people"
+}

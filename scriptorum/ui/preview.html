@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- F9 (M6): only Scriptorum's own bundled scripts may run. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' qrc:; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="styles.css">
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script defer src="dist/preview-window.js"></script>
+</head>
+<body class="preview-only">
+<section id="preview-pane" class="preview-pane" tabindex="0" data-i18n-aria="status.preview">
+  <div id="zoom-bar" class="zoom-bar" role="toolbar" data-i18n-aria="zoom.label">
+    <button id="zoom-out" type="button" class="zoom-step" data-i18n-title="zoom.out" data-i18n-aria="zoom.out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <output id="zoom-value" class="zoom-value" data-i18n-title="zoom.current"></output>
+    <button id="zoom-in" type="button" class="zoom-step" data-i18n-title="zoom.in" data-i18n-aria="zoom.in"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button id="zoom-fit-width" type="button" aria-pressed="true" data-i18n="zoom.fitWidth"></button>
+    <button id="zoom-whole-page" type="button" aria-pressed="false" data-i18n="zoom.wholePage"></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button id="zoom-spread" type="button" aria-pressed="false" data-i18n="zoom.spread"></button>
+  </div>
+  <div id="preview-error" class="preview-error hidden" role="alert"></div>
+  <div id="pages" class="pages"></div>
+</section>
+</body>
+</html>

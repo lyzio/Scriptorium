@@ -1,0 +1,13 @@
+{
+  "label": "Navigator",
+  "outline": "Outline",
+  "codex": "Codex",
+  "handouts": "Handouts",
+  "emptyOutline": "No scenes yet",
+  "sceneNumber": "{number}",
+  "outlineHint": "Drag acts and scenes to reorder them",
+  "untitled": "(no title)",
+  "codexHint": "People, places, clues, creatures and maps",
+  "handoutsHint": "Every handout, in the order the players get them",
+  "sheets": "{n} sheets"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "full-width",
+  "name": "element.full-width",
+  "category": "block",
+  "body": "blocks",
+  "fields": [],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": null,
+  "always_on": true,
+  "renderer": false,
+  "toolbar_group": "structure",
+  "allow": null,
+  "spec": "F7.4 layout marker: a section that spans every column; it floats to the top or bottom of the page where it is written."
+}

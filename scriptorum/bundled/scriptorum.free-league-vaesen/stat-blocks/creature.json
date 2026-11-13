@@ -1,0 +1,11 @@
+{
+  "element": "creature",
+  "stats": [
+    {"id": "might", "label": "stat.might", "min": 0, "max": 99},
+    {"id": "body-control", "label": "stat.body-control", "min": 0, "max": 99},
+    {"id": "magic", "label": "stat.magic", "min": 0, "max": 99},
+    {"id": "manipulation", "label": "stat.manipulation", "min": 0, "max": 99},
+    {"id": "fear", "label": "stat.fear", "min": 0, "max": 99}
+  ],
+  "sections": ["skills", "magic-powers", "attacks", "weaknesses", "conditions", "banishment"]
+}

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Scriptorum
+GenericName=Adventure writer
+Comment=Write tabletop adventures and print them as PDF
+Exec=@EXEC@ %f
+Icon=scriptorum
+Terminal=false
+Categories=Office;WordProcessor;
+MimeType=application/x-scriptorum-adventure;
+StartupWMClass=scriptorum

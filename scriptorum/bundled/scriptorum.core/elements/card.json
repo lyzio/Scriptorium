@@ -1,0 +1,27 @@
+{
+  "id": "card",
+  "name": "element.card",
+  "category": "block",
+  "body": "blocks",
+  "allow": [
+    "information"
+  ],
+  "fields": [
+    {
+      "name": "entry",
+      "kind": "codex",
+      "types": null,
+      "required": true,
+      "label": "field.card.entry"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "shortcut": null,
+  "editor": "form",
+  "codex_ref": "card",
+  "renderer": false,
+  "toolbar_group": "people"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "scriptorum.plain-system",
+  "kind": "game-system",
+  "name": "Plain",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "The standard choice for an adventure that is not written for a particular published game: every element of the core element kit, plain dice notation (d6, 2d10+1, d100), a creature with free name-and-value lines, and checks in free text.",
+  "standard": true,
+  "requires": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.x"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "countdown",
+  "name": "element.countdown",
+  "category": "block",
+  "body": "blocks",
+  "allow": [
+    "countdown-step"
+  ],
+  "fields": [
+    {
+      "name": "title",
+      "kind": "text",
+      "required": false,
+      "label": "field.countdown.title"
+    }
+  ],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": null,
+  "toolbar_group": "rules"
+}

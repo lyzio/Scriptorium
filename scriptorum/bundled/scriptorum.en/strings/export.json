@@ -1,0 +1,9 @@
+{
+  "handoutsSuffix": "handouts",
+  "suffix.booklet": "booklet",
+  "suffix.print-shop": "print shop",
+  "title.booklet": "Export the booklet PDF",
+  "title.print-shop": "Export the print-shop PDF",
+  "suffix.accessible": "accessible",
+  "title.accessible": "Export the accessible PDF (PDF/UA)"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "scriptorum.plain",
+  "kind": "theme",
+  "name": "Plain",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "A general theme for any game system: black text on white with one mid-grey for rules and fills, Libre Baskerville text and Playfair Display headings, thin single rules and no ornaments. It prints sharply on any black-and-white printer.",
+  "standard": true,
+  "requires": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.x"
+    }
+  ]
+}

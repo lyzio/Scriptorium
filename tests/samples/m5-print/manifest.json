@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "app": "0.5.2",
+  "title": "The Lighthouse Keeper's Log",
+  "game_system": {
+    "id": "scriptorum.plain-system",
+    "version": "1.0.0"
+  },
+  "theme": {
+    "id": "scriptorum.plain",
+    "version": "1.0.0"
+  },
+  "modules": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.plain-system",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.plain",
+      "version": "1.0.0"
+    }
+  ],
+  "chapters": [
+    "text/chapter-01.typ"
+  ],
+  "created": "2026-11-12T09:00:00+00:00",
+  "modified": "2026-11-12T09:00:00+00:00"
+}

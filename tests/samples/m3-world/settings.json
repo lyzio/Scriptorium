@@ -1,0 +1,10 @@
+{
+  "title_page": {
+    "subtitle": "A codex, map and handout sample"
+  },
+  "end_matter": {
+    "clue_overview": true,
+    "index": true
+  },
+  "easy_read": true
+}

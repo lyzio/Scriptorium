@@ -1,0 +1,16 @@
+{
+  "title": "Check for updates",
+  "checking": "Looking for a newer version of Scriptorum…",
+  "noAddress": "No update address is set yet, so Scriptorum cannot look for a newer version. Nothing was sent anywhere.",
+  "notHttps": "The update address is not a secure https address, so Scriptorum did not use it.",
+  "newer": "Scriptorum {version} is available. You have {current}.",
+  "noteLabel": "What is new",
+  "noDownload": "The update file gives no download page for this computer.",
+  "current": "Scriptorum is up to date. You have the newest version, {current}.",
+  "unreachable": "The update address could not be reached. Nothing else is affected; you can try again later.",
+  "invalid": "The update file could not be read. Nothing else is affected.",
+  "open": "Open the download page",
+  "askText": "Should Scriptorum look for a newer version once a week? It reads one small file from the project's web address and sends nothing about you or your adventures. You can change this at any time in Settings ▸ Application.",
+  "askYes": "Check once a week",
+  "askNo": "No, thanks"
+}

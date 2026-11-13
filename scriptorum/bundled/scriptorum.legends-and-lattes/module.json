@@ -1,0 +1,19 @@
+{
+  "id": "scriptorum.legends-and-lattes",
+  "kind": "theme",
+  "name": "Legends and Lattes",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "A general theme for any game system: cozy fantasy in coffee brown and cream with sage green, Fraunces headings, Lora text and Nunito labels, coffee cups, beans and leaf sprigs. An unofficial, fan-made look, not affiliated with or endorsed by the owners of the work or game it is named after. Legends & Lattes is a novel by Travis Baldree.",
+  "requires": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.x"
+    }
+  ]
+}

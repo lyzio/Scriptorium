@@ -1,0 +1,17 @@
+{
+  "id": "pacing",
+  "name": "element.pacing",
+  "category": "block",
+  "body": "rich",
+  "fields": [],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "frame_icon": "hourglass",
+  "shortcut": null,
+  "body_required": true,
+  "toolbar_group": "rules",
+  "spec": "11.12 Pacing note: only for the Game Master, so never a handout."
+}

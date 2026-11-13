@@ -1,0 +1,16 @@
+{
+  "id": "contents",
+  "name": "element.contents",
+  "category": "block",
+  "body": "none",
+  "fields": [],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": false,
+  "handout": false,
+  "editor": "chip",
+  "shortcut": null,
+  "always_on": true,
+  "toolbar_group": "structure",
+  "spec": "F7.7, 9.3: the table of contents: act headings and scenes with their pages, each a link."
+}

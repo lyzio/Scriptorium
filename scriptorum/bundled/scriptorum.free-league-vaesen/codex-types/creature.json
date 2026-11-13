@@ -1,0 +1,8 @@
+{
+  "id": "creature",
+  "name": "codex.creature",
+  "icon": "creature",
+  "title_field": "name",
+  "fields_from_element": "creature",
+  "card_element": "creature"
+}

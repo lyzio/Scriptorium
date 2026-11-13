@@ -1,0 +1,13 @@
+{
+  "id": "scriptorum.en",
+  "kind": "interface-language",
+  "name": "English",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": ["Scriptorum project"],
+  "description": "Every interface text in English (F15).",
+  "requires": [],
+  "locale": "en"
+}

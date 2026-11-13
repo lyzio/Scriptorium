@@ -1,0 +1,63 @@
+{
+  "id": "person",
+  "name": "element.person",
+  "category": "block",
+  "body": "blocks",
+  "allow": [
+    "information"
+  ],
+  "fields": [
+    {
+      "name": "name",
+      "kind": "text",
+      "required": true,
+      "label": "field.person.name"
+    },
+    {
+      "name": "mood",
+      "kind": "text",
+      "required": false,
+      "label": "field.person.mood"
+    },
+    {
+      "name": "description",
+      "kind": "rich",
+      "required": false,
+      "label": "field.person.description"
+    },
+    {
+      "name": "portrait",
+      "kind": "image",
+      "required": false,
+      "label": "field.person.portrait",
+      "accept": "jpeg-png"
+    },
+    {
+      "name": "portrait-description",
+      "kind": "text",
+      "required": false,
+      "label": "field.person.portrait-description"
+    },
+    {
+      "name": "links",
+      "kind": "codex-list",
+      "types": null,
+      "required": false,
+      "label": "field.person.links"
+    },
+    {
+      "name": "linked-to",
+      "kind": "text",
+      "required": false,
+      "label": "field.person.linked-to",
+      "legacy": true
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "editor": "form",
+  "shortcut": null,
+  "toolbar_group": "people"
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Restore unsaved work",
+  "text": "Scriptorum closed unexpectedly while these adventures had unsaved changes. The changes up to the last pause in typing were kept.",
+  "item": "{title} — {time}",
+  "restore": "Restore",
+  "discard": "Discard",
+  "later": "Decide later"
+}

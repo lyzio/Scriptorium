@@ -1,0 +1,53 @@
+{
+  "spec": "F6.7, F8 (decided 6 November 2026): six hands bundled in the core element kit with their licences, listed by the kind of hand. Files store the font's name. Each hand has its own size so they read alike.",
+  "hands": [
+    {
+      "family": "Homemade Apple",
+      "file": "fonts/HomemadeApple-Regular.ttf",
+      "licence": "Apache-2.0",
+      "label": "hand.everyday",
+      "note": "hand.everyday.note",
+      "size_pt": 12.2
+    },
+    {
+      "family": "Pinyon Script",
+      "file": "fonts/PinyonScript-Regular.ttf",
+      "licence": "OFL-1.1",
+      "label": "hand.copperplate",
+      "note": "hand.copperplate.note",
+      "size_pt": 18
+    },
+    {
+      "family": "Dancing Script",
+      "file": "fonts/DancingScript-Regular.ttf",
+      "licence": "OFL-1.1",
+      "label": "hand.flowing",
+      "note": "hand.flowing.note",
+      "size_pt": 15
+    },
+    {
+      "family": "Caveat",
+      "file": "fonts/Caveat-Regular.ttf",
+      "licence": "OFL-1.1",
+      "label": "hand.note",
+      "note": "hand.note.note",
+      "size_pt": 16.5
+    },
+    {
+      "family": "Cedarville Cursive",
+      "file": "fonts/CedarvilleCursive-Regular.ttf",
+      "licence": "OFL-1.1",
+      "label": "hand.school",
+      "note": "hand.school.note",
+      "size_pt": 13
+    },
+    {
+      "family": "TT2020 Style E",
+      "file": "fonts/TT2020StyleE-Regular.ttf",
+      "licence": "OFL-1.1",
+      "label": "hand.typewriter",
+      "note": "hand.typewriter.note",
+      "size_pt": 11
+    }
+  ]
+}

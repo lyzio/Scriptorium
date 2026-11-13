@@ -1,0 +1,21 @@
+{
+  "id": "clue",
+  "name": "codex.clue",
+  "icon": "clue",
+  "title_field": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "text",
+      "required": true,
+      "label": "field.codex.name"
+    },
+    {
+      "name": "description",
+      "kind": "rich",
+      "required": false,
+      "label": "field.codex.description"
+    }
+  ],
+  "card_element": null
+}

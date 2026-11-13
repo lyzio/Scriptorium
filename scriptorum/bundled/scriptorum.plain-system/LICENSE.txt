@@ -1,0 +1,7 @@
+Plain — the standard game system for Scriptorum
+
+Copyright (C) 2026 Scriptorum project. Licensed under the GNU General Public
+License, version 3 or later (GPL-3.0-or-later); see COPYING in Scriptorum.
+
+It belongs to no published game and uses no text, artwork or logos from any
+publisher.

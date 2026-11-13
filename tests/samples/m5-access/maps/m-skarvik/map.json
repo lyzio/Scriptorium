@@ -1,0 +1,77 @@
+{
+  "id": "m-skarvik",
+  "title": "Skärvik and the bay",
+  "image": "maps/m-skarvik/base.png",
+  "width": 2200,
+  "height": 1400,
+  "description": "Karta över Skärvik och viken: hamnen i söder, kapellet på kullen i norr och vraket ute i viken.",
+  "layers": [
+    {
+      "id": "l-1",
+      "name": "Landmarks",
+      "show_in_handout": true,
+      "items": [
+        {
+          "id": "i-1",
+          "type": "pin",
+          "x": 0.3,
+          "y": 0.6,
+          "text": "",
+          "entry": "c-skarvik-harbour"
+        },
+        {
+          "id": "i-2",
+          "type": "label",
+          "x": 0.8,
+          "y": 0.2,
+          "text": "The bay"
+        },
+        {
+          "id": "i-3",
+          "type": "pin",
+          "x": 0.2,
+          "y": 0.18,
+          "text": "",
+          "entry": "c-the-chapel"
+        }
+      ]
+    },
+    {
+      "id": "l-2",
+      "name": "GM secrets",
+      "show_in_handout": false,
+      "items": [
+        {
+          "id": "i-4",
+          "type": "area",
+          "points": [
+            [
+              0.66,
+              0.55
+            ],
+            [
+              0.8,
+              0.5
+            ],
+            [
+              0.86,
+              0.66
+            ],
+            [
+              0.72,
+              0.74
+            ]
+          ],
+          "text": "Wreck of the Hoppet"
+        },
+        {
+          "id": "i-5",
+          "type": "note",
+          "x": 0.62,
+          "y": 0.8,
+          "text": "The bell rings from here at night."
+        }
+      ]
+    }
+  ]
+}

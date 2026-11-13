@@ -1,0 +1,12 @@
+{
+  "id": "scriptorum.free-league-vaesen",
+  "kind": "game-system",
+  "name": "Vaesen",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": ["Scriptorum project"],
+  "description": "Vaesen: turns on the elements of the core element kit, and supplies the creature stat block, dice notation and codex types.",
+  "requires": [{"id": "scriptorum.core", "version": "1.x"}]
+}

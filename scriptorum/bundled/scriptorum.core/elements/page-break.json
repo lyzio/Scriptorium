@@ -1,0 +1,14 @@
+{
+  "id": "page-break",
+  "name": "element.page-break",
+  "category": "layout",
+  "body": "none",
+  "fields": [],
+  "variants": [],
+  "page_start": "never",
+  "handout": false,
+  "editor": "chip",
+  "shortcut": "Ctrl+Enter",
+  "always_on": true,
+  "toolbar_group": "structure"
+}

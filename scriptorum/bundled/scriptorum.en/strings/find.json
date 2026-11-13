@@ -1,0 +1,13 @@
+{
+  "query": "Find in the whole adventure",
+  "replace": "Replace with",
+  "matchCase": "Match case",
+  "find": "Find",
+  "previous": "Previous match",
+  "next": "Next match",
+  "replaceAll": "Replace all",
+  "close": "Close",
+  "count": "{count} found",
+  "position": "{index} of {count}",
+  "replaced": "{count} replaced"
+}

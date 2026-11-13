@@ -1,0 +1,27 @@
+{
+  "id": "map",
+  "name": "element.map",
+  "category": "block",
+  "body": "none",
+  "fields": [
+    {
+      "name": "map",
+      "kind": "map-ref",
+      "required": true,
+      "label": "field.map.map"
+    },
+    {
+      "name": "handout-also",
+      "kind": "bool",
+      "required": false,
+      "label": "field.map.handout-also"
+    }
+  ],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": true,
+  "shortcut": null,
+  "editor": "form",
+  "toolbar_group": "handouts"
+}

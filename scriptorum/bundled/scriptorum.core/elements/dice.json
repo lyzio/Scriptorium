@@ -1,0 +1,33 @@
+{
+  "id": "dice",
+  "name": "element.dice",
+  "category": "both",
+  "body": "rich",
+  "fields": [
+    {
+      "name": "dice",
+      "kind": "dice",
+      "required": true,
+      "default": "D6",
+      "label": "field.dice.dice"
+    },
+    {
+      "name": "face",
+      "kind": "number",
+      "required": false,
+      "min": 1,
+      "max": 6,
+      "label": "field.dice.face"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "inline_editor": "chip",
+  "shortcut": "Ctrl+D",
+  "shortcut_group": "dice-or-check",
+  "inline_form": "call",
+  "toolbar_group": "rules"
+}

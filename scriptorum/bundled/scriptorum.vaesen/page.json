@@ -1,0 +1,13 @@
+{
+  "paper": "a4",
+  "columns": 2,
+  "column_gap_mm": 7,
+  "margin_mm": {
+    "top": 18,
+    "bottom": 22,
+    "x": 17
+  },
+  "font": "Libre Baskerville",
+  "font_size_pt": 9.5,
+  "page_numbers": true
+}

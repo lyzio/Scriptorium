@@ -1,0 +1,76 @@
+{
+  "papers": [
+    {
+      "id": "recipe",
+      "label": "paper.recipe",
+      "outline": "#7A5A3E",
+      "inner": "#D9C6A6",
+      "edge_mm": 0.25,
+      "corner": "round",
+      "folds": [
+        0,
+        0
+      ],
+      "ruled": {
+        "colour": "#D8C9B2",
+        "gap_mm": 7
+      },
+      "marks": {
+        "colour": "#B99876",
+        "opacity": 0.12,
+        "spots": [
+          1,
+          2
+        ],
+        "stains": [
+          0,
+          0
+        ],
+        "rings": [
+          0,
+          1
+        ],
+        "tears": [
+          0,
+          0
+        ]
+      },
+      "ink": "#3B2A1E"
+    },
+    {
+      "id": "napkin",
+      "label": "paper.napkin",
+      "outline": "#8A7460",
+      "inner": "#E2D6C4",
+      "edge": "soft",
+      "edge_mm": 0.7,
+      "corner": "fold",
+      "folds": [
+        2,
+        2
+      ],
+      "marks": {
+        "colour": "#A9845E",
+        "opacity": 0.15,
+        "spots": [
+          0,
+          2
+        ],
+        "stains": [
+          0,
+          1
+        ],
+        "rings": [
+          1,
+          1
+        ],
+        "tears": [
+          0,
+          0
+        ]
+      },
+      "ink": "#4A3628"
+    }
+  ],
+  "rules": "F6.5: the paper is never filled with a colour; outline, inner line, folds, marks and ink may be coloured; stains stay pale (opacity at most 0.2)."
+}

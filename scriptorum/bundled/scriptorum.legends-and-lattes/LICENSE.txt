@@ -1,0 +1,13 @@
+Legends and Lattes — a general theme for Scriptorum
+
+Copyright (C) 2026 Scriptorum project. Licensed under the GNU General Public
+License, version 3 or later (GPL-3.0-or-later); see COPYING in Scriptorum.
+
+An unofficial, fan-made look, not affiliated with or endorsed by the owners of the work or game it is named after.
+It uses no text, artwork or logos from any publisher. Its frames and
+ornaments are the project's own drawings (tools/make_ornaments.py).
+
+Fonts in fonts/ keep their own licences (SIL OFL 1.1 or Apache 2.0), each in
+the licence file beside the font. The relationship chart uses fletcher 0.5.8
+(MIT), CeTZ 0.3.4 (LGPL-3.0-or-later) and oxifmt 0.2.1 (MIT-0) in vendor/,
+each with its licence file.

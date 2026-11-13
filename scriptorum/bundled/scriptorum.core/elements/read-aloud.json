@@ -1,0 +1,15 @@
+{
+  "id": "read-aloud",
+  "name": "element.read-aloud",
+  "category": "block",
+  "body": "rich",
+  "fields": [],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": "Ctrl+Shift+R",
+  "body_required": true,
+  "toolbar_group": "boxes"
+}

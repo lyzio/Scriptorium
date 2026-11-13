@@ -1,0 +1,19 @@
+{
+  "id": "scriptorum.vaesen",
+  "kind": "theme",
+  "name": "Vaesen",
+  "version": "1.0.0",
+  "format": 1,
+  "app": "1.0.0",
+  "licence": "GPL-3.0-or-later",
+  "authors": [
+    "Scriptorum project"
+  ],
+  "description": "The Vaesen look for every element of the core element kit: the secret box with its red scroll, the open curl frame, pen-nib bullets, Berolina act headings, Playfair Display headings, Libre Baskerville text, Cormorant Garamond read-aloud text and Acme labels (all SIL OFL), and handout papers. Frames and ornaments are the project's own drawings. An unofficial, fan-made look, not affiliated with or endorsed by Free League Publishing.",
+  "requires": [
+    {
+      "id": "scriptorum.free-league-vaesen",
+      "version": "1.x"
+    }
+  ]
+}

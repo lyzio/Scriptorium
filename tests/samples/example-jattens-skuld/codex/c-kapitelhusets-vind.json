@@ -1,0 +1,10 @@
+{
+  "id": "c-kapitelhusets-vind",
+  "type": "place",
+  "fields": {
+    "name": "Kapitelhusets vind",
+    "description": "Här ligger delarna av det gamla astronomiska uret i trälårar."
+  },
+  "folder": "Platser",
+  "tags": []
+}

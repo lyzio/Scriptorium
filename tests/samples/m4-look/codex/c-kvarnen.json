@@ -1,0 +1,10 @@
+{
+  "id": "c-kvarnen",
+  "type": "place",
+  "fields": {
+    "name": "Kvarnen",
+    "description": "Den gamla vattenkvarnen vid ån."
+  },
+  "folder": "Places",
+  "tags": []
+}

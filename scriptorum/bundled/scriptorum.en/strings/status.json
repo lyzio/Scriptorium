@@ -1,0 +1,23 @@
+{
+  "label": "Status",
+  "line": "Line {line}",
+  "page": "Page {page} of {pages}",
+  "noPages": "No pages",
+  "words": "{count} words",
+  "noErrors": "No errors",
+  "errors": "{count} error(s)",
+  "warnings": "{count} warning(s)",
+  "lastExport": "Last export {time} · {file}",
+  "noExport": "Not exported yet",
+  "building": "Building…",
+  "saved": "Saved",
+  "exported": "Exported {file}",
+  "preview": "Preview",
+  "fontAdded": "Added {family} ({licence})",
+  "undone": "Undone",
+  "exampleCopied": "A copy of the example adventure was saved as {path}.",
+  "warningsTitle": "Warnings",
+  "warningsNone": "No warnings.",
+  "warningsHint": "Warnings do not stop an export; errors do. Click a warning with a line to go there.",
+  "warningsClose": "Close"
+}

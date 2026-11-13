@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "app": "0.4.1",
+  "title": "Ljuset i Kvarnen",
+  "game_system": {
+    "id": "scriptorum.free-league-vaesen",
+    "version": "1.0.0"
+  },
+  "theme": {
+    "id": "scriptorum.vaesen",
+    "version": "1.0.0"
+  },
+  "modules": [
+    {
+      "id": "scriptorum.core",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.free-league-vaesen",
+      "version": "1.0.0"
+    },
+    {
+      "id": "scriptorum.vaesen",
+      "version": "1.0.0"
+    }
+  ],
+  "chapters": [
+    "text/chapter-01.typ"
+  ],
+  "created": "2026-11-11T12:00:00+00:00",
+  "modified": "2026-11-11T12:00:00+00:00"
+}

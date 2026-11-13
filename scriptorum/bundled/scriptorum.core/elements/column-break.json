@@ -1,0 +1,14 @@
+{
+  "id": "column-break",
+  "name": "element.column-break",
+  "category": "layout",
+  "body": "none",
+  "fields": [],
+  "variants": [],
+  "page_start": "never",
+  "handout": false,
+  "editor": "chip",
+  "shortcut": "Ctrl+Shift+Enter",
+  "always_on": true,
+  "toolbar_group": "structure"
+}

@@ -1,0 +1,89 @@
+{
+  "id": "handout",
+  "name": "element.handout",
+  "category": "block",
+  "body": "rich",
+  "fields": [
+    {
+      "name": "title",
+      "kind": "text",
+      "required": true,
+      "label": "field.handout.title"
+    },
+    {
+      "name": "writer",
+      "kind": "codex",
+      "types": [
+        "person"
+      ],
+      "required": false,
+      "label": "field.handout.writer"
+    },
+    {
+      "name": "written-by",
+      "kind": "text",
+      "required": false,
+      "label": "field.handout.written-by",
+      "legacy": true
+    },
+    {
+      "name": "handwriting",
+      "kind": "choice",
+      "options_from": "handwriting",
+      "required": false,
+      "label": "field.handout.handwriting"
+    },
+    {
+      "name": "paper",
+      "kind": "choice",
+      "options_from": "papers",
+      "required": false,
+      "default": "letter",
+      "label": "field.handout.paper"
+    },
+    {
+      "name": "image",
+      "kind": "image",
+      "required": false,
+      "label": "field.handout.image"
+    },
+    {
+      "name": "tilt",
+      "kind": "number",
+      "min": -5,
+      "max": 5,
+      "required": false,
+      "default": 0,
+      "label": "field.handout.tilt"
+    },
+    {
+      "name": "id",
+      "kind": "id",
+      "required": false,
+      "hidden": true,
+      "label": "field.handout.id"
+    },
+    {
+      "name": "look",
+      "kind": "seed",
+      "required": false,
+      "hidden": true,
+      "label": "field.handout.look"
+    },
+    {
+      "name": "only-handout",
+      "kind": "bool",
+      "required": false,
+      "default": false,
+      "label": "field.handout.only-handout"
+    }
+  ],
+  "variants": [],
+  "page_start": "when-needed",
+  "never_split": true,
+  "handout": "always",
+  "editor": "frame",
+  "shortcut": null,
+  "new_look": true,
+  "toolbar_group": "handouts"
+}

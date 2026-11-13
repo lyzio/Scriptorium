@@ -1,0 +1,13 @@
+{
+  "id": "c-per-mansson",
+  "type": "person",
+  "fields": {
+    "name": "Per Månsson",
+    "description": "Stenhuggare från Dalby, stor och skamsen. Han är blind sedan tre nätter och sitter i boden med en trasa över ögonen. ”Det var bara puts. Bara gammal puts.”",
+    "linked-to": [
+      "c-stenhuggarboden"
+    ]
+  },
+  "folder": "Personer",
+  "tags": []
+}

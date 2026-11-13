@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "app": "0.1.1",
+  "title": "Locked code sample",
+  "game_system": {"id": "scriptorum.free-league-vaesen", "version": "1.0.0"},
+  "theme": {"id": "scriptorum.vaesen", "version": "1.0.0"},
+  "modules": [
+    {"id": "scriptorum.core", "version": "1.0.0"},
+    {"id": "scriptorum.free-league-vaesen", "version": "1.0.0"},
+    {"id": "scriptorum.vaesen", "version": "1.0.0"}
+  ],
+  "chapters": ["text/chapter-01.typ"],
+  "created": "2026-11-04T21:00:00+00:00",
+  "modified": "2026-11-04T21:00:00+00:00"
+}

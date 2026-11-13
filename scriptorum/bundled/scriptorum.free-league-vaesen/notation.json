@@ -1,0 +1,5 @@
+{
+  "dice": ["d6"],
+  "pool": true,
+  "success_on": [6]
+}

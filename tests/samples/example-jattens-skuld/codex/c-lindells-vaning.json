@@ -1,0 +1,10 @@
+{
+  "id": "c-lindells-vaning",
+  "type": "place",
+  "fields": {
+    "name": "Lindells våning",
+    "description": "Docent Lindells våning vid Stora Södergatan, full av samlingar."
+  },
+  "folder": "Platser",
+  "tags": []
+}

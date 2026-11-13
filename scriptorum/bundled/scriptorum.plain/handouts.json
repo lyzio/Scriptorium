@@ -1,0 +1,122 @@
+{
+  "papers": [
+    {
+      "id": "letter",
+      "label": "paper.letter",
+      "outline": "#494949",
+      "inner": "#B1B1B1",
+      "edge_mm": 1.3,
+      "folds": [
+        1,
+        2
+      ],
+      "marks": {
+        "colour": "#B1B1B1",
+        "spots": [
+          2,
+          4
+        ],
+        "stains": [
+          0,
+          0
+        ],
+        "tears": [
+          0,
+          0
+        ]
+      },
+      "ink": "#353535"
+    },
+    {
+      "id": "worn",
+      "label": "paper.worn",
+      "outline": "#3E3E3E",
+      "inner": "#B1B1B1",
+      "edge_mm": 1.7,
+      "folds": [
+        1,
+        2
+      ],
+      "marks": {
+        "colour": "#8A8A8A",
+        "opacity": 0.14,
+        "spots": [
+          3,
+          5
+        ],
+        "stains": [
+          1,
+          2
+        ],
+        "tears": [
+          1,
+          2
+        ]
+      },
+      "ink": "#2D2D2D"
+    },
+    {
+      "id": "plain",
+      "label": "paper.plain",
+      "outline": "#494949",
+      "inner": "#B1B1B1",
+      "edge_mm": 0.9,
+      "folds": [
+        0,
+        0
+      ],
+      "marks": {
+        "colour": "#B1B1B1",
+        "spots": [
+          0,
+          0
+        ],
+        "stains": [
+          0,
+          0
+        ],
+        "tears": [
+          0,
+          0
+        ]
+      },
+      "ink": "#1C1C1C"
+    },
+    {
+      "id": "parchment",
+      "label": "paper.parchment",
+      "outline": "#4F4F4F",
+      "inner": "#A8A8A8",
+      "edge": "soft",
+      "edge_mm": 0.9,
+      "corner": "round",
+      "folds": [
+        1,
+        1
+      ],
+      "marks": {
+        "colour": "#909090",
+        "opacity": 0.14,
+        "spots": [
+          4,
+          7
+        ],
+        "spot_mm": 1.5,
+        "stains": [
+          1,
+          1
+        ],
+        "tears": [
+          0,
+          0
+        ],
+        "hatch": [
+          10,
+          14
+        ]
+      },
+      "ink": "#373737"
+    }
+  ],
+  "rules": "F6.5: the paper is never filled with a colour. The Plain theme draws the Vaesen theme's four papers in greys, so they print on any black-and-white printer (F8)."
+}

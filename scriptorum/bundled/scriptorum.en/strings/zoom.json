@@ -1,0 +1,11 @@
+{
+  "label": "Zoom",
+  "out": "Zoom out",
+  "in": "Zoom in",
+  "current": "Size of the pages in the preview",
+  "percent": "{percent} %",
+  "fitWidth": "Fit width",
+  "wholePage": "Whole page",
+  "spread": "Two pages",
+  "ownWindow": "Own window"
+}

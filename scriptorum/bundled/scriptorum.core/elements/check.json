@@ -1,0 +1,28 @@
+{
+  "id": "check",
+  "name": "element.check",
+  "category": "block",
+  "body": "rich",
+  "fields": [
+    {
+      "name": "roll",
+      "kind": "text",
+      "required": true,
+      "label": "field.check.roll"
+    },
+    {
+      "name": "difficulty",
+      "kind": "text",
+      "required": false,
+      "label": "field.check.difficulty"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "never_split": true,
+  "handout": false,
+  "editor": "frame",
+  "shortcut": "Ctrl+D",
+  "shortcut_group": "dice-or-check",
+  "toolbar_group": "rules"
+}

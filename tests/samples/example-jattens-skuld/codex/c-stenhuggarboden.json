@@ -1,0 +1,10 @@
+{
+  "id": "c-stenhuggarboden",
+  "type": "place",
+  "fields": {
+    "name": "Stenhuggarboden",
+    "description": "Boden vid Kyrkogatan där Per Månsson sitter blind."
+  },
+  "folder": "Platser",
+  "tags": []
+}

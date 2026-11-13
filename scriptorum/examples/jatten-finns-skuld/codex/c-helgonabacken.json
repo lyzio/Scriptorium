@@ -1,0 +1,10 @@
+{
+  "id": "c-helgonabacken",
+  "type": "place",
+  "fields": {
+    "name": "Helgonabacken",
+    "description": "Backen öster om staden, där en spricka under en gammal hagtorn leder ner i berget."
+  },
+  "folder": "Platser",
+  "tags": []
+}

@@ -1,0 +1,17 @@
+{
+  "id": "c-lovisa-berg",
+  "type": "person",
+  "fields": {
+    "name": "Lovisa Berg",
+    "mood": "Tired and stubborn",
+    "description": "Harbour master for twenty years. Lost a brother at sea.",
+    "linked-to": [
+      "c-skarvik-harbour",
+      "c-nils-ek"
+    ]
+  },
+  "folder": "People",
+  "tags": [
+    "harbour"
+  ]
+}

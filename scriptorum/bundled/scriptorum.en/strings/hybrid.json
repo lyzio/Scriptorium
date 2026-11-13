@@ -1,0 +1,6 @@
+{
+  "label": "Source of the {kind} under the cursor",
+  "nothing": "Click in a block to see its source here.",
+  "source": "Source of the block under the cursor",
+  "hint": "Changes apply when you leave this box or press Ctrl+Enter."
+}

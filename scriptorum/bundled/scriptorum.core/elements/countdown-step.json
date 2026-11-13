@@ -1,0 +1,31 @@
+{
+  "id": "countdown-step",
+  "name": "element.countdown-step",
+  "category": "block",
+  "only_inside": [
+    "countdown"
+  ],
+  "body": "rich",
+  "body_required": true,
+  "fields": [
+    {
+      "name": "when",
+      "kind": "text",
+      "required": false,
+      "label": "field.countdown-step.when"
+    },
+    {
+      "name": "go-to",
+      "kind": "element-ref",
+      "target": "scene",
+      "required": false,
+      "label": "field.countdown-step.go-to"
+    }
+  ],
+  "variants": [],
+  "page_start": "never",
+  "handout": false,
+  "editor": "row",
+  "enter_adds_next": true,
+  "shortcut": null
+}

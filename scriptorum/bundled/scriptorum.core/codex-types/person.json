@@ -1,0 +1,53 @@
+{
+  "id": "person",
+  "name": "codex.person",
+  "icon": "person",
+  "title_field": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "text",
+      "required": true,
+      "label": "field.person.name"
+    },
+    {
+      "name": "mood",
+      "kind": "text",
+      "required": false,
+      "label": "field.person.mood"
+    },
+    {
+      "name": "description",
+      "kind": "rich",
+      "required": false,
+      "label": "field.person.description"
+    },
+    {
+      "name": "portrait",
+      "kind": "image",
+      "required": false,
+      "label": "field.person.portrait",
+      "accept": "jpeg-png"
+    },
+    {
+      "name": "portrait-description",
+      "kind": "text",
+      "required": false,
+      "label": "field.person.portrait-description"
+    },
+    {
+      "name": "linked-to",
+      "kind": "link",
+      "required": false,
+      "label": "field.person.links"
+    },
+    {
+      "name": "handwriting",
+      "kind": "choice",
+      "options_from": "handwriting",
+      "required": false,
+      "label": "field.person.handwriting"
+    }
+  ],
+  "card_element": "person"
+}
