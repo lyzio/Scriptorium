@@ -8,3 +8,7 @@ dist/
 !scriptorum/ui/dist/
 scenario-output/
 dist-release/
+packaging/work/
+packaging/dist/
+.github/.DS_Store
+.DS_Store

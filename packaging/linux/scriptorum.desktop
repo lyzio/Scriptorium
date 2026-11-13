@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Scriptorum
+GenericName=Adventure writer
+Comment=Write role-playing adventures and print them as PDF
+Exec=scriptorum %f
+Icon=scriptorum
+Terminal=false
+Categories=Office;WordProcessor;
+MimeType=application/x-scriptorum-adventure;application/x-scriptorum-module;
+Keywords=adventure;rpg;typst;pdf;game master;
+StartupWMClass=scriptorum
+X-AppImage-Version=@VERSION@

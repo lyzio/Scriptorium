@@ -1,0 +1,22 @@
+#!/bin/sh
+# Starts Scriptorum inside its AppImage (design document F10).
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Qt WebEngine (the window's Chromium) runs its pages in a sandbox that needs
+# user namespaces. Some distributions (Ubuntu 23.10 and newer) allow those only
+# to programs with their own AppArmor profile, which an AppImage cannot bring,
+# and some switch them off. There the sandbox is turned off, or the window
+# would not open. The pages are Scriptorum's own, under their script policy (F9).
+if [ -z "$QTWEBENGINE_DISABLE_SANDBOX" ]; then
+    if [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" = "1" ] \
+       || [ "$(cat /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null)" = "0" ] \
+       || [ "$(cat /proc/sys/user/max_user_namespaces 2>/dev/null)" = "0" ]; then
+        export QTWEBENGINE_DISABLE_SANDBOX=1
+    fi
+fi
+
+# Where the AppImage itself is, and its desktop entry and file types, so the
+# app can offer on first start to register them (F10).
+export SCRIPTORUM_APPDIR="$HERE"
+
+exec "$HERE/usr/lib/scriptorum/scriptorum" "$@"

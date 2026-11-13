@@ -236,31 +236,31 @@ def test_T_REL_06_runs_a_newer_verified_version(tmp_path):
     home = tmp_path / "home"
     versions = Versions(home)
     assert ran(boot(tmp_path, home)) == "builtin"           # nothing kept
-    install(tmp_path, versions, "0.6.8")
+    install(tmp_path, versions, "9.0.8")
     out = boot(tmp_path, home)
-    assert ran(out) == "0.6.8" and str(versions.folder("0.6.8")) in out
+    assert ran(out) == "9.0.8" and str(versions.folder("9.0.8")) in out
     assert versions.state()["trying"] is None                 # it started
     # Damaged: one file changed after it was installed.
-    main = versions.folder("0.6.8") / "scriptorum" / "app" / "main.py"
+    main = versions.folder("9.0.8") / "scriptorum" / "app" / "main.py"
     main.write_text(main.read_text() + "\n# changed\n")
     assert ran(boot(tmp_path, home)) == "builtin"
     # Missing.
-    shutil.rmtree(versions.folder("0.6.8"))
+    shutil.rmtree(versions.folder("9.0.8"))
     assert ran(boot(tmp_path, home)) == "builtin"
     # Made for another Python and Qt: unpacked by hand, never chosen.
-    packs.unpack(write(tmp_path, "other.zip", pack_bytes("0.6.9", runtime={"python": "2.7", "pyside6": "1.0.0"})),
-                 versions.folder("0.6.9"))
+    packs.unpack(write(tmp_path, "other.zip", pack_bytes("9.0.9", runtime={"python": "2.7", "pyside6": "1.0.0"})),
+                 versions.folder("9.0.9"))
     state = versions.state()
-    state.update({"current": "0.6.9", "failed": []})
+    state.update({"current": "9.0.9", "failed": []})
     versions.save(state)
     assert ran(boot(tmp_path, home)) == "builtin"
     # Not newer than the installed app.
     install(tmp_path, versions, "0.0.1")
     assert ran(boot(tmp_path, home)) == "builtin"
     # Signed with another key than the one built into the installed app.
-    install(tmp_path, versions, "0.7.0")
+    install(tmp_path, versions, "9.1.0")
     assert ran(boot(tmp_path, home, key=OTHER_PUBLIC)) == "builtin"
-    assert ran(boot(tmp_path, home)) == "0.7.0"
+    assert ran(boot(tmp_path, home)) == "9.1.0"
 
 
 @pytest.mark.integration
@@ -271,25 +271,25 @@ def test_T_REL_06_goes_back_when_a_version_fails(tmp_path):
     run again."""
     home = tmp_path / "home"
     versions = Versions(home)
-    install(tmp_path, versions, "0.6.8")
-    assert ran(boot(tmp_path, home)) == "0.6.8"
-    install(tmp_path, versions, "0.6.9", FAIL_MAIN, running="0.6.8")
+    install(tmp_path, versions, "9.0.8")
+    assert ran(boot(tmp_path, home)) == "9.0.8"
+    install(tmp_path, versions, "9.0.9", FAIL_MAIN, running="9.0.8")
     out = boot(tmp_path, home)
-    assert ran(out) == "0.6.8", out
-    assert versions.take_notice() == {"kind": "failed", "version": "0.6.9", "back_to": "0.6.8"}
-    assert ran(boot(tmp_path, home)) == "0.6.8"                 # never run again
+    assert ran(out) == "9.0.8", out
+    assert versions.take_notice() == {"kind": "failed", "version": "9.0.9", "back_to": "9.0.8"}
+    assert ran(boot(tmp_path, home)) == "9.0.8"                 # never run again
     assert list((home / "logs").glob("update-start-*.log"))      # details stay on this computer
     # A crash before the window opened: back at the next start.
-    install(tmp_path, versions, "0.7.0", CRASH_MAIN, running="0.6.8")
+    install(tmp_path, versions, "9.1.0", CRASH_MAIN, running="9.0.8")
     out = boot(tmp_path, home)
-    assert "RAN" not in out and versions.state()["trying"] == "0.7.0"
-    assert ran(boot(tmp_path, home)) == "0.6.8"
-    assert versions.take_notice() == {"kind": "failed", "version": "0.7.0", "back_to": "0.6.8"}
+    assert "RAN" not in out and versions.state()["trying"] == "9.1.0"
+    assert ran(boot(tmp_path, home)) == "9.0.8"
+    assert versions.take_notice() == {"kind": "failed", "version": "9.1.0", "back_to": "9.0.8"}
     # With no previous version kept, the installed app's own version runs.
     versions2 = Versions(tmp_path / "home2")
-    install(tmp_path, versions2, "0.6.9", FAIL_MAIN)
+    install(tmp_path, versions2, "9.0.9", FAIL_MAIN)
     assert ran(boot(tmp_path, tmp_path / "home2")) == "builtin"
-    assert versions2.take_notice() == {"kind": "failed", "version": "0.6.9", "back_to": __version__}
+    assert versions2.take_notice() == {"kind": "failed", "version": "9.0.9", "back_to": __version__}
 
 
 @pytest.mark.integration
@@ -304,22 +304,22 @@ def test_T_REL_06_go_back_by_hand_and_two_kept(tmp_path):
     (home / "recent.json").write_text('["/home/gm/adventure.scav"]')
     keep = {k: v for k, v in snapshot(home).items()}
     versions = Versions(home)
-    install(tmp_path, versions, "0.6.8")
-    install(tmp_path, versions, "0.6.9", running="0.6.8")
-    assert versions.kept() == ["0.6.8", "0.6.9"]
-    assert ran(boot(tmp_path, home)) == "0.6.9"
-    install(tmp_path, versions, "0.7.0", running="0.6.9")
-    assert versions.kept() == ["0.6.9", "0.7.0"]                 # 0.6.8 removed
-    assert ran(boot(tmp_path, home)) == "0.7.0"
+    install(tmp_path, versions, "9.0.8")
+    install(tmp_path, versions, "9.0.9", running="9.0.8")
+    assert versions.kept() == ["9.0.8", "9.0.9"]
+    assert ran(boot(tmp_path, home)) == "9.0.9"
+    install(tmp_path, versions, "9.1.0", running="9.0.9")
+    assert versions.kept() == ["9.0.9", "9.1.0"]                 # 0.6.8 removed
+    assert ran(boot(tmp_path, home)) == "9.1.0"
     # Going back from 0.7.0 runs 0.6.9 next time; 0.7.0 is removed then.
-    assert versions.back_target("0.7.0", __version__) == "0.6.9"
-    assert versions.go_back("0.7.0", __version__) == "0.6.9"
-    assert ran(boot(tmp_path, home)) == "0.6.9"
-    assert versions.kept() == ["0.6.9"]
-    assert versions.take_notice() == {"kind": "back", "version": "0.7.0", "back_to": "0.6.9"}
+    assert versions.back_target("9.1.0", __version__) == "9.0.9"
+    assert versions.go_back("9.1.0", __version__) == "9.0.9"
+    assert ran(boot(tmp_path, home)) == "9.0.9"
+    assert versions.kept() == ["9.0.9"]
+    assert versions.take_notice() == {"kind": "back", "version": "9.1.0", "back_to": "9.0.9"}
     # From the only kept version, going back runs the installed app's own.
-    assert versions.back_target("0.6.9", __version__) == __version__
-    assert versions.go_back("0.6.9", __version__) == __version__
+    assert versions.back_target("9.0.9", __version__) == __version__
+    assert versions.go_back("9.0.9", __version__) == __version__
     assert ran(boot(tmp_path, home)) == "builtin"
     # Nothing to go back to while the installed app's own version runs.
     assert versions.back_target(__version__, __version__) is None
@@ -489,7 +489,7 @@ def test_T_REL_08_release_job_on_github(tmp_path):
     assert new[0][:4] == ["gh", "release", "create", "v9.9.1"] and "--verify-tag" in new[0]
     assert again[0][:3] == ["gh", "release", "upload"] and "--clobber" in again[0]
     assert not any("prerelease" in part for command in new + again for part in command)
-    assert tool.REPOSITORY_SLUG == "lyzio/Scriptorum" and tool.GITHUB_SECRET == "UPDATE"
+    assert tool.REPOSITORY_SLUG == "lyzio/Scriptorum" and tool.SIGNING_SETTING == "UPDATE"
 
     version = "9.9.1"
     repo = _repo_copy(tmp_path, version)
@@ -788,7 +788,13 @@ def test_T_UI_46_paragraphs_fill_the_width(ui):
     measure("narrow")
     ui.window.resize(2400, 1000)
     para, hundred = measure("wide")
-    assert para > hundred * 1.1, (para, hundred)
+    # The paragraph fills the editor column the window really got: a screen
+    # narrower than 2400 px (a laptop) caps the window (found on macOS, 0.6.8).
+    column = ui.js("(() => { const v = document.getElementById('visual'); const s = getComputedStyle(v);"
+                   " return v.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); })()")
+    assert abs(_width(ui, top) - column) <= 2, (_width(ui, top), column)
+    if ui.window.width() >= 2000:
+        assert para > hundred * 1.1, (para, hundred)
     ui.run("window.__scriptorum.setPreview(false)")
     para_hidden, _ = measure("preview hidden")
     assert para_hidden > para

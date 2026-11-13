@@ -1,0 +1,39 @@
+{
+  "kit_version": "1.0.2",
+  "app_name": "Scriptorum",
+  "python": "3.13",
+  "bundle_id": "org.scriptorum.Scriptorum",
+  "file_types": {
+    "scav": {
+      "name": "Scriptorum adventure",
+      "uti": "org.scriptorum.adventure",
+      "mime": "application/x-scriptorum-adventure",
+      "progid": "Scriptorum.Adventure",
+      "mac_role": "Editor"
+    },
+    "scmod": {
+      "name": "Scriptorum module",
+      "uti": "org.scriptorum.module",
+      "mime": "application/x-scriptorum-module",
+      "progid": "Scriptorum.Module",
+      "mac_role": "Viewer"
+    }
+  },
+  "build_tools": {
+    "pyinstaller": "6.22.3",
+    "pyinstaller-hooks-contrib": "2026.10"
+  },
+  "appimagetool": {
+    "version": "1.9.1",
+    "x86_64": {
+      "url": "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage",
+      "sha256": "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+    },
+    "aarch64": {
+      "url": "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage",
+      "sha256": "f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158"
+    }
+  },
+  "macos_minimum": "12.0",
+  "windows_minimum": "10.0.17763"
+}

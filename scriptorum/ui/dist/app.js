@@ -17201,7 +17201,7 @@
     var selAndBlockStr;
     var blockRem;
     var propAndValStr;
-    remaining = remaining.replace(/[/][*](\s|.)+?[*][/]/g, "");
+    remaining = remaining.replace(/[/][*][\s\S]+?[*][/]/g, "");
     function removeSelAndBlockFromRemaining() {
       if (remaining.length > selAndBlockStr.length) {
         remaining = remaining.substr(selAndBlockStr.length);
@@ -17221,7 +17221,7 @@
       if (nothingLeftToParse) {
         break;
       }
-      var selAndBlock = remaining.match(/^\s*((?:.|\s)+?)\s*\{((?:.|\s)+?)\}/);
+      var selAndBlock = remaining.match(/^\s*([\s\S]+?)\s*\{([\s\S]+?)\}/);
       if (!selAndBlock) {
         warn("Halting stylesheet parsing: String stylesheet contains more to parse but no selector and block found in: " + remaining);
         break;

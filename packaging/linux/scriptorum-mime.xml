@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Scriptorum's two file types (design document F10). -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-scriptorum-adventure">
+    <comment>Scriptorum adventure</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.scav" weight="80"/>
+    <icon name="application-x-scriptorum-adventure"/>
+  </mime-type>
+  <mime-type type="application/x-scriptorum-module">
+    <comment>Scriptorum module</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.scmod" weight="80"/>
+    <icon name="application-x-scriptorum-module"/>
+  </mime-type>
+</mime-info>
