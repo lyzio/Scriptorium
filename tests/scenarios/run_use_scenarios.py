@@ -892,10 +892,8 @@ def update_steps(s: Scenario, window: MainWindow) -> None:
     update_key.PUBLIC_KEY = ""
     s.act("Help ▸ Check for updates…", "window.__scriptorum.updates.check(); true", 1500)
     no_key = s.js("document.getElementById('update-text').textContent") or ""
-    s.check("without the project's key the app says it cannot trust an update file", "no update key" in no_key)
-    s.note("friction", "Until the project manager makes the signing key (python tools/release.py keygen) and commits "
-           "its public key, Check for updates… can only say that this copy holds no update key.", "M6-0.6.7 (by hand)")
-    update_key.PUBLIC_KEY = PUBLIC
+    s.check("a copy without a key says it cannot trust an update file", "no update key" in no_key)
+    update_key.PUBLIC_KEY = PUBLIC   # the tests' own key stands in for the project's
     s.act("Help ▸ Check for updates… (with a key)", "window.__scriptorum.updates.check(); true", 1500)
     s.check("a newer version is offered with Download and install",
             s.js("!document.getElementById('update-install').classList.contains('hidden')") is True)

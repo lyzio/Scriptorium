@@ -7,6 +7,8 @@ Base: **M6-0.6.6** (`main`, accepted and merged on 13 November 2026). This is pa
 - the start-up step: a newer verified version made for this Python, Qt and Typst runs from the author's folder; a version that fails to start is set aside and Scriptorum goes back by itself and says so; Help ▸ Go back to version X; only two versions kept
 - the built-in update address is the GitHub release address; Settings ▸ Application ▸ Updates ▸ Update address, https only; a signed update file may move the address
 - the release script, `tools/release.py`, and a hand-test tool, `tools/try_update.py`
+- releases made on GitHub: a release job signs with the key kept as the repository secret `UPDATE` when an accepted build's tag is pushed (decided 13 November 2026)
+- the project's public key is built in
 - paragraphs and headings fill the editor's width (issue #8)
 - a short block's ↑ ↓ + × menu is a 2 × 2 square and stays on top while the pointer is on it (issue #9)
 
@@ -21,11 +23,12 @@ Every file not listed here is unchanged from M6-0.6.6.
 | `scriptorum/boot.py` | The start-up step: chooses and runs a kept version or the installed one; a failed start goes back (F22.4, F22.5) |
 | `scriptorum/core/packs.py` | Update packs: safe unpacking, the signed file list, the runtime check, and the versions kept in the author's folder with `state.json` (F22, 9.7) |
 | `scriptorum/core/signing.py` | Ed25519 signatures on update files and packs (F22) |
-| `scriptorum/core/update_key.py` | The project's public key; empty until `tools/release.py keygen` is run (F22) |
+| `scriptorum/core/update_key.py` | The project's public key, made by the project manager with `tools/release.py keygen` (F22) |
 | `scriptorum/licences/parts/cryptography.txt` | cryptography's licence for About ▸ Under the hood (F9, section 7) |
-| `tools/release.py` | The release script: the key once, then the pack and the signed update file from the tagged commit of main (F22, D12) |
+| `tools/release.py` | The release script: the key once, then the pack and the signed update file from the tagged commit of main; on GitHub the key comes from the secret and the note from the tag; never a pre-release (F22, D12) |
+| `.github/workflows/release.yml` | The release job on GitHub: signs with the repository secret `UPDATE` when a tag v<version> is pushed (F22) |
 | `tools/try_update.py` | Try the start-up step and Go back by hand with a throwaway key |
-| `tests/test_m6c5.py` | T-REL-04 to 07, T-UI-44 to 47 |
+| `tests/test_m6c5.py` | T-REL-04 to 08, T-UI-44 to 47 |
 | `tests/update_keys.py` | The tests' own signing keys |
 
 ## Changed

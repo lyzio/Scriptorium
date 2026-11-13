@@ -5,4 +5,4 @@ private key outside the repository. Empty until the key is made: until then
 the app cannot trust any update file, and Check for updates… says so.
 """
 
-PUBLIC_KEY = ""
+PUBLIC_KEY = "H5YSTqXZ7ctnwEFpAYtTg9BhQ3gpxYlofpnGMiDsSVs="

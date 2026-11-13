@@ -5,6 +5,7 @@ T-REL-04  signed update files and packs; damaged or unsafe ones refused
 T-REL-05  Download and install from Help ▸ Check for updates…
 T-REL-06  the start-up step, going back by itself and by hand, two versions kept
 T-REL-07  the release script and the signing key
+T-REL-08  the release job on GitHub, with the key as the secret UPDATE
 T-UI-44   the manual update address
 T-UI-45   the update address can move
 T-UI-46   paragraphs fill the editor's width (issue #8)
@@ -342,7 +343,7 @@ def _repo_copy(tmp_path: Path, version: str) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
     for name in ("scriptorum/core/signing.py", "scriptorum/core/packs.py", "scriptorum/core/update_key.py",
-                 "scriptorum/boot.py", "tools/release.py"):
+                 "scriptorum/boot.py", "tools/release.py", ".github/workflows/release.yml"):
         (repo / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / name, repo / name)
     init = repo / "scriptorum" / "__init__.py"
@@ -354,9 +355,13 @@ def _repo_copy(tmp_path: Path, version: str) -> Path:
     return repo
 
 
-def _release(repo: Path, *args: str):
+def _release(repo: Path, *args: str, extra_env=None, drop=()):
     env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.org", GIT_COMMITTER_NAME="t",
                GIT_COMMITTER_EMAIL="t@example.org")
+    env.pop("SCRIPTORUM_SIGNING_KEY", None)
+    env.update(extra_env or {})
+    for name in drop:
+        env.pop(name, None)
     return subprocess.run([sys.executable, "tools/release.py", *args], cwd=repo, env=env, capture_output=True,
                           text=True, timeout=300)
 
@@ -457,6 +462,71 @@ def test_T_REL_07_release_script(tmp_path):
     # A test release is never published.
     refused = _release(repo, version, "--note", "x", "--key", str(key), "--allow-untagged", "--publish")
     assert refused.returncode == 1 and "never published" in refused.stderr
+
+
+@pytest.mark.integration
+def test_T_REL_08_release_job_on_github(tmp_path):
+    """T-REL-08: the workflow runs only for a tag v<version>, in the protected
+    environment "release", on a standard runner with the pinned Python and
+    library, and may only write releases; the script signs with the key from
+    the secret alone and never writes it; a missing or wrong secret is
+    refused; the note is the tag's message; never a pre-release."""
+    import importlib.util
+    workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    assert 'tags: ["v*"]' in workflow and "branches" not in workflow.split("jobs:")[0]
+    assert "environment: release" in workflow and "runs-on: ubuntu-24.04" in workflow
+    assert workflow.count("permissions:") == 1 and "contents: write" in workflow
+    assert "SCRIPTORUM_SIGNING_KEY: ${{ secrets.UPDATE }}" in workflow and "secrets." not in workflow.replace("secrets.UPDATE", "")
+    assert 'python-version: "3.13"' in workflow and "--note-from-tag --publish" in workflow
+    pinned = [line.strip().strip('",') for line in (ROOT / "pyproject.toml").read_text().splitlines() if "cryptography==" in line]
+    assert pinned and f'"{pinned[0]}"' in workflow
+    assert "prerelease" not in workflow
+    spec = importlib.util.spec_from_file_location("release_tool", ROOT / "tools" / "release.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    new = tool.publish_commands("9.9.1", ["a.zip", "u.json"], "Note.", exists=False)
+    again = tool.publish_commands("9.9.1", ["a.zip", "u.json"], "Note.", exists=True)
+    assert new[0][:4] == ["gh", "release", "create", "v9.9.1"] and "--verify-tag" in new[0]
+    assert again[0][:3] == ["gh", "release", "upload"] and "--clobber" in again[0]
+    assert not any("prerelease" in part for command in new + again for part in command)
+    assert tool.REPOSITORY_SLUG == "lyzio/Scriptorum" and tool.GITHUB_SECRET == "UPDATE"
+
+    version = "9.9.1"
+    repo = _repo_copy(tmp_path, version)
+    home = tmp_path / "ci-home"           # the runner's home: no key file there
+    home.mkdir()
+    key = tmp_path / "keys" / "signing.pem"
+    assert _release(repo, "keygen", "--key", str(key)).returncode == 0
+    _git(repo, "commit", "-q", "-am", "the project's public key")
+    _git(repo, "tag", "-a", f"v{version}", "-m", "Better maps.\n\nAnd quicker exports.")
+    secret = {"SCRIPTORUM_SIGNING_KEY": key.read_text(), "HOME": str(home)}
+    done = _release(repo, version, "--note-from-tag", extra_env=secret)
+    assert done.returncode == 0, done.stderr
+    update_file = json.loads((repo / "dist-release" / "scriptorum-update.json").read_text())
+    assert update_file["update"]["note"] == "Better maps.\n\nAnd quicker exports."
+    public = signing.public_of(key.read_bytes())
+    assert updates.read_file(json.dumps(update_file).encode(), "0.6.7", key=public, have=packs.PINNED)["state"] == "newer"
+    # The key was never written anywhere but where keygen put it.
+    body = key.read_bytes().splitlines()[1]          # the key itself, not its PEM header
+    leaked = [p for folder in (repo, home) for p in folder.rglob("*")
+              if p.is_file() and ".git" not in p.parts and body in p.read_bytes()]
+    assert leaked == []
+    shutil.rmtree(repo / "dist-release")
+    # A missing secret, with no key file either: refused, nothing written.
+    missing = _release(repo, version, "--note-from-tag", extra_env={"HOME": str(home)})
+    assert missing.returncode == 1 and "No signing key" in missing.stderr
+    # Another key in the secret: refused.
+    wrong = _release(repo, version, "--note-from-tag",
+                     extra_env={"SCRIPTORUM_SIGNING_KEY": OTHER_PRIVATE.decode(), "HOME": str(home)})
+    assert wrong.returncode == 1 and "does not match" in wrong.stderr
+    assert not (repo / "dist-release").exists()
+    # A tag without a message gives "Scriptorum <version>".
+    _git(repo, "tag", "-d", f"v{version}")
+    _git(repo, "tag", f"v{version}")
+    plain = _release(repo, version, "--note-from-tag", extra_env=secret)
+    assert plain.returncode == 0, plain.stderr
+    note = json.loads((repo / "dist-release" / "scriptorum-update.json").read_text())["update"]["note"]
+    assert note == f"Scriptorum {version}"
 
 
 # --- the window: T-REL-05, T-UI-44, T-UI-45, T-UI-46, T-UI-47 -------------------------------------

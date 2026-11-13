@@ -7,13 +7,13 @@
 | Python | 3.13.18 |
 | Pinned versions | PySide6 6.8.3 (Qt 6.8 LTS) · typst 0.15.0 · spylls 0.1.7 · cryptography 48.0.1 (new) |
 | Date | 13 November 2026 |
-| Result | **341 passed**, 0 failed, 0 skipped |
+| Result | **342 passed**, 0 failed, 0 skipped (your run of the first commit: 341 passed, checksum equal) |
 
 ## This build
 
-Part C5 of M6, built on M6-0.6.6 (accepted and merged into `main` while this build was made; the two trees are identical). The 328 tests of 0.6.6 passed before any change. 13 tests are new, in `tests/test_m6c5.py`. Three existing tests were corrected, because the design changed what they check (below, and in the Test Plan's change log). The m1-basic checksum is unchanged.
+Part C5 of M6, built on M6-0.6.6 (accepted and merged into `main` while this build was made; the two trees are identical). The 328 tests of 0.6.6 passed before any change. 14 tests are new, in `tests/test_m6c5.py`. Three existing tests were corrected, because the design changed what they check (below, and in the Test Plan's change log). The m1-basic checksum is unchanged.
 
-The full suite ran twice at the end. The first run had one failure, T-WORLD-28 (the map editor's pin number field did not appear within 5 seconds); the test passed on its own, in its module, and in the second full run (341 passed). I take it as a one-off timing failure under load; the build does not touch the map editor. If you see it on your machine, tell me and I will open an issue.
+The full suite ran twice at the end. The first run had one failure, T-WORLD-28 (the map editor's pin number field did not appear within 5 seconds); the test passed on its own, in its module, and in the second full run (341 passed). It then failed again, and also fails now and then on 0.6.6 (1 run in 4 with the module before it), so it is an existing timing weakness of that test, not new in 0.6.7: issue #11. The last full run passed (342).
 
 ## Results
 
@@ -36,6 +36,7 @@ The full suite ran twice at the end. The first run had one failure, T-WORLD-28 (
 | T-REL-05 | Pass | New. Download and install is shown beside the download page; nothing is downloaded until it is clicked; then the only requests are the update file and the pack; "Ready. The update is installed the next time Scriptorum starts."; the open adventure's unsaved text is untouched; the installed app's files are unchanged; a damaged download is refused; a version for another Qt says "This version needs a new installer" and offers only the download page |
 | T-REL-06 | Pass | New, four tests, each start in its own process as the installed app does. A newer verified version runs from its folder; damaged, missing, made for another Python and Qt, not newer, or signed with another key: the installed version runs. A version that raises an error goes back at once to the previous one; one that crashes goes back at the next start; both leave the notice and a log in the crash-log folder and are not run again. Go back to version X; only two versions kept; modules, settings and recent files byte-identical. In the window: Go back is offered only while a kept version runs, and the notice is shown once |
 | T-REL-07 | Pass | New. Run on a copy of this repository as its own git repository: keygen writes the key outside the repository (mode 600) and the public key into the app, and refuses to replace it; the release is refused when untagged, with changed files, for another version, with the key inside the repository, and when a test release would be published; the real one writes the pack and the signed update file, which the app accepts, installs and runs at the next start from the author's folder; two runs give the same pack byte for byte |
+| T-REL-08 | Pass | New (added after you chose GitHub Actions). The workflow runs only for a tag v*, in the environment `release`, on `ubuntu-24.04` with Python 3.13 and cryptography 48.0.1 (the same pin as pyproject), may only write releases, and uses no secret but `UPDATE`. On a copy of the repository: the key given only through the secret signs a release whose note is the annotated tag's message; the key's content is found nowhere but its own file; a missing secret and another key are refused and write nothing; a tag without a message gives "Scriptorum 9.9.1"; the gh commands never mark a pre-release. The job itself can only run on GitHub: Pending until your first tag |
 | T-USE-01, T-USE-02 | Pass | Both goals reached; all 115 scenario checks passed. New C5 steps: the Update address (http refused, https stored), Check for updates without a key and with one, Download and install with the adventure open, a long paragraph at full width |
 
 ## By hand here (not automated)
@@ -62,14 +63,14 @@ The full suite ran twice at the end. The first run had one failure, T-WORLD-28 (
 
 | Kind | Finding | Milestone |
 |---|---|---|
-| friction | Until you run `python tools/release.py keygen` and commit `scriptorum/core/update_key.py`, Check for updates… can only say that this copy holds no update key | by hand, before the first release (no issue: a step for you) |
+| friction | A copy without the project's key could only say that it holds no update key | fixed: your public key is built in from this build |
 | friction | Labels typed in pasted text stay after converting | later, with import (issue #2, already open) |
 | friction | Adding a map always goes through a file dialog | later (issue #3, already open) |
 | friction | A new clue's text typed into its Information item is not saved as the clue's description | later (issue #7, already open) |
 
 ## Tests added
 
-T-REL-04 (3 tests), T-REL-05 (1), T-REL-06 (4), T-REL-07 (1), T-UI-44 (1), T-UI-45 (1), T-UI-46 (1), T-UI-47 (1): 13 in all. The Test Plan got these IDs before the build.
+T-REL-04 (3 tests), T-REL-05 (1), T-REL-06 (4), T-REL-07 (1), T-REL-08 (1), T-UI-44 (1), T-UI-45 (1), T-UI-46 (1), T-UI-47 (1): 14 in all. The Test Plan got these IDs before the build.
 
 ## Hand checks for the project manager
 
@@ -77,7 +78,7 @@ T-REL-04 (3 tests), T-REL-05 (1), T-REL-06 (4), T-REL-07 (1), T-UI-44 (1), T-UI-
 2. **Issue #9.** Hover a one-line paragraph and move down onto ↓, + and ×: the menu stays, and each button acts on that paragraph.
 3. **The start-up step and Go back**, with `tools/try_update.py` (commands in the README and the final message): About shows 9.9.9, Help ▸ Go back to version 0.6.7, restart, About shows 0.6.7 and says it went back; then `prepare --broken` and `start`: it says 9.9.9 did not start.
 4. **Settings ▸ Application ▸ Updates.** Type an http address: refused. Type an https one, Help ▸ Check for updates…: the window names it. Use built-in address.
-5. **Before the first release:** `python tools/release.py keygen`, keep the key safe, and commit `scriptorum/core/update_key.py`.
+5. **Before the first release:** done: you made the key, stored it as the secret `UPDATE`, and its public key is committed in this build. Keep one offline copy of the key file.
 
 ## Sample checksum (Linux)
 

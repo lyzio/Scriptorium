@@ -23,6 +23,14 @@ It writes into dist-release/:
 
 and, with --publish, attaches both to the GitHub release v0.6.8 of
 lyzio/Scriptorum with the gh command (otherwise it prints that command).
+On GitHub (decided 13 November 2026) the same script runs in the release job
+(.github/workflows/release.yml) when an accepted build's tag v<version> is
+pushed: the key then comes only from the repository secret UPDATE (handed to
+the script as SCRIPTORUM_SIGNING_KEY), never from a file, and the note from the
+tag's message (--note-from-tag). A release is never marked pre-release, since
+GitHub's "latest" address, which the app's update address uses, skips
+pre-releases (F21).
+
 --moved-to https://… writes into the update file that the update address has
 moved. --allow-untagged makes a test release from any commit; such a release
 is never published. Nothing here is part of the app; it never runs there.
@@ -52,6 +60,8 @@ REPOSITORY = updates.UPDATE_URL.split("/releases/")[0]
 REPOSITORY_SLUG = "/".join(REPOSITORY.rstrip("/").split("/")[-2:])
 DEFAULT_KEY = Path.home() / ".scriptorum-release" / "update-signing-key.pem"
 KEY_FILE = ROOT / "scriptorum" / "core" / "update_key.py"
+KEY_SECRET = "SCRIPTORUM_SIGNING_KEY"   # the environment variable the release job fills from the secret
+GITHUB_SECRET = "UPDATE"                # the repository secret on GitHub that holds the key
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)   # the same pack bytes on every computer
 
 
@@ -107,16 +117,26 @@ def write_public_key(public: str) -> None:
 
 
 def _load_key(key_path: Path) -> bytes:
-    if _inside_repository(key_path):
-        raise Refused(f"The private key may not be kept inside the repository: {key_path}")
-    try:
-        pem = key_path.read_bytes()
-    except OSError as exc:
-        raise Refused(f"No signing key at {key_path}. Make it once with: python tools/release.py keygen") from exc
+    """The private key: from the secret SCRIPTORUM_SIGNING_KEY when it is set
+    (the release job on GitHub), otherwise from the key file outside the
+    repository. The key is only ever held in memory here."""
+    secret = os.environ.get(KEY_SECRET, "").strip()
+    if secret:
+        pem = (secret + "\n").encode("ascii", errors="replace")
+        where = f"the GitHub secret {GITHUB_SECRET}"
+    else:
+        if _inside_repository(key_path):
+            raise Refused(f"The private key may not be kept inside the repository: {key_path}")
+        try:
+            pem = key_path.read_bytes()
+        except OSError as exc:
+            raise Refused(f"No signing key: neither the GitHub secret {GITHUB_SECRET} (as {KEY_SECRET}) nor a key file at {key_path}. "
+                          "Make it once with: python tools/release.py keygen") from exc
+        where = str(key_path)
     try:
         public = signing.public_of(pem)
     except (ValueError, TypeError) as exc:
-        raise Refused(f"{key_path} is not a signing key.") from exc
+        raise Refused(f"{where} is not a signing key.") from exc
     if public != signing.public_key():
         raise Refused("The signing key does not match the public key built into the app "
                       "(scriptorum/core/update_key.py), so no copy of Scriptorum would accept this release.")
@@ -138,6 +158,28 @@ def check_commit(version: str) -> None:
         except subprocess.CalledProcessError:
             continue
     raise Refused("This commit is not on main. A release is made only from the tagged commit of main.")
+
+
+def tag_note(version: str) -> str:
+    """The note of a release made on GitHub: the message of the annotated tag
+    v<version>, or "Scriptorum <version>" for a tag without a message."""
+    try:
+        kind = _git("for-each-ref", f"refs/tags/v{version}", "--format=%(objecttype)").strip()
+        message = _git("for-each-ref", f"refs/tags/v{version}", "--format=%(contents)") if kind == "tag" else ""
+    except subprocess.CalledProcessError:
+        message = ""
+    message = message.split("-----BEGIN PGP SIGNATURE-----")[0].strip()
+    return message or f"Scriptorum {version}"
+
+
+def publish_commands(version: str, files: list, note: str, exists: bool) -> list:
+    """The gh commands that publish the files: a new GitHub release on main, or
+    the files added to the release of that tag when it already exists. Never
+    a pre-release: GitHub's "latest" address skips those (F21)."""
+    if exists:
+        return [["gh", "release", "upload", f"v{version}", *map(str, files), "--clobber", "--repo", REPOSITORY_SLUG]]
+    return [["gh", "release", "create", f"v{version}", *map(str, files), "--repo", REPOSITORY_SLUG,
+             "--verify-tag", "--title", f"Scriptorum {version}", "--notes", note]]
 
 
 def package_files() -> list:
@@ -228,6 +270,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="python tools/release.py", description=__doc__.split("\n\n")[0])
     parser.add_argument("version", help="the version to release, or keygen to make the signing key once")
     parser.add_argument("--note", default="", help="what is new, in one or two lines")
+    parser.add_argument("--note-from-tag", action="store_true", help="take the note from the tag's message (the release job)")
     parser.add_argument("--key", help=f"the private key (default {DEFAULT_KEY})")
     parser.add_argument("--out", default=str(ROOT / "dist-release"), help="where to write the files")
     parser.add_argument("--moved-to", help="tell every app that the update address has moved here (https)")
@@ -241,23 +284,30 @@ def main(argv=None) -> int:
             public = keygen(_key_path(args.key), args.force)
             print(f"The private key is in {_key_path(args.key)}. Keep it safe and never share it.")
             print(f"The public key {public} is written into scriptorum/core/update_key.py; commit that file.")
+            print("Then give the key to the release job on GitHub, once:")
+            print(f"gh secret set {GITHUB_SECRET} --repo {REPOSITORY_SLUG} < {_key_path(args.key)}")
+            print("and keep one offline copy of the key file: GitHub never shows a secret again.")
             return 0
         if args.publish and args.allow_untagged:
             raise Refused("A test release made with --allow-untagged is never published.")
-        made = release(args.version, args.note, _key_path(args.key), Path(args.out), args.allow_untagged,
+        note = tag_note(args.version) if args.note_from_tag else args.note
+        made = release(args.version, note, _key_path(args.key), Path(args.out), args.allow_untagged,
                        args.moved_to, args.base_url)
     except Refused as exc:
         print(f"Refused: {exc}", file=sys.stderr)
         return 1
     print(f"Made {made['pack'].name} ({made['files']} files) and {made['update'].name} in {made['pack'].parent}.")
-    command = ["gh", "release", "create", f"v{args.version}", str(made["pack"]), str(made["update"]), "--target", "main",
-               "--repo", REPOSITORY_SLUG, "--title", f"Scriptorum {args.version}", "--notes", args.note.strip(), "--prerelease"]
+    files = [made["pack"], made["update"]]
     if args.publish:
-        subprocess.run(command, check=True)
-        print(f"Published as the GitHub release v{args.version}.")
+        exists = subprocess.run(["gh", "release", "view", f"v{args.version}", "--repo", REPOSITORY_SLUG],
+                                capture_output=True).returncode == 0
+        for command in publish_commands(args.version, files, note, exists):
+            subprocess.run(command, check=True)
+        print(f"Published on the GitHub release v{args.version}.")
     else:
         print("To publish it as the GitHub release, run:")
-        print(" ".join(f'"{c}"' if " " in c else c for c in command))
+        for command in publish_commands(args.version, files, note, False):
+            print(" ".join(f'"{c}"' if " " in c else c for c in command))
     return 0
 
 
