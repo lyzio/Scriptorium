@@ -84,6 +84,9 @@ def programs() -> List[dict]:
          "licence": "Apache-2.0", "file": "parts/typst.txt"},
         {"id": "spylls", "name": "spylls", "version": _version("spylls"), "what": "spylls",
          "licence": "MPL-2.0", "file": "parts/spylls.txt"},
+        # F22 (M6-0.6.7): checks the project's signature on update files and packs.
+        {"id": "cryptography", "name": "cryptography", "version": _version("cryptography"), "what": "cryptography",
+         "licence": "Apache-2.0, BSD-3-Clause", "file": "parts/cryptography.txt"},
         {"id": "cytoscape", "name": "Cytoscape.js", "version": pv["cytoscape"], "what": "cytoscape",
          "licence": "MIT", "file": "parts/cytoscape.txt"},
         {"id": "phosphor", "name": "Phosphor Icons (Light)", "version": pv["phosphor"], "what": "phosphor",

@@ -362,7 +362,8 @@
   </div>
 </dialog>
 
-<!-- F21 (M6 part C): Help ▸ Check for updates…; nothing is downloaded. -->
+<!-- F21 (M6 part C): Help ▸ Check for updates…; F22 (C5): Download and
+     install, only when the author clicks it. -->
 <dialog id="update-dialog" class="dialog">
   <h2 data-i18n="update.title"></h2>
   <p id="update-text" role="status"></p>
@@ -370,9 +371,12 @@
     <h3 data-i18n="update.noteLabel"></h3>
     <p id="update-note"></p>
   </div>
+  <p id="update-install-text" class="update-install hidden" role="status"></p>
+  <p id="update-address" class="update-address"></p>
   <div class="dialog-actions">
     <button id="update-close" type="button" data-i18n="dialog.close"></button>
-    <button id="update-open" type="button" class="primary hidden" data-i18n="update.open"></button>
+    <button id="update-open" type="button" class="hidden" data-i18n="update.open"></button>
+    <button id="update-install" type="button" class="primary hidden" data-i18n="update.install"></button>
   </div>
 </dialog>
 

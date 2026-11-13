@@ -243,8 +243,8 @@ def test_T_SRC_19_menus_offer_it(ui):
 @pytest.mark.ui
 def test_T_UI_40_editor_fills_its_pane(ui):
     """T-UI-40: the editor column fills the pane between the side panel and
-    the preview, in a wide window and with the preview hidden; paragraphs stop
-    at about 100 characters; field rows use the full width."""
+    the preview, in a wide window and with the preview hidden; field rows use
+    the full width. (Paragraphs fill the width from 0.6.7: T-UI-46, issue #8.)"""
     load(ui, SCENE.replace("Opening words.", "Opening words. " * 60))
     for width in (1440, 2400):
         ui.window.resize(width, 900)
@@ -254,11 +254,8 @@ def test_T_UI_40_editor_fills_its_pane(ui):
         assert visual >= pane - 2, (width, visual, pane)
         scene = ui.js("document.querySelector('#visual .el-scene').getBoundingClientRect().width")
         assert scene > pane - 200, (width, scene, pane)
-        para = ui.js("window.__blk((' Opening words.'.repeat(60)).trim()).querySelector('.rich').getBoundingClientRect().width")
-        char = ui.js("(() => { const s = document.createElement('span'); s.textContent = '0'.repeat(100);"
-                     " const r = window.__blk((' Opening words.'.repeat(60)).trim()).querySelector('.rich'); r.append(s);"
-                     " const w = s.getBoundingClientRect().width; s.remove(); return w; })()")
-        assert para <= char * 1.05 + 2, (width, para, char)
+        # Paragraphs no longer stop at about 100 characters: the design
+        # changed on 13 November 2026 (issue #8); T-UI-46 checks them.
         # Nothing sticks out sideways: no horizontal scroll bar.
         assert ui.js("(() => { const p = document.getElementById('editor-pane'); return p.scrollWidth <= p.clientWidth + 1; })()"), \
             ui.js("(() => { const p = document.getElementById('editor-pane'); const w = p.getBoundingClientRect().right;"

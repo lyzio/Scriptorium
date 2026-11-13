@@ -14,7 +14,7 @@ import { escapeInline, setChipLabeler, setInlineKinds } from "./inline";
 import { Block, Chapter, Doc, ElementDef, isDoc, OutlineItem } from "./model";
 import { Spelling } from "./spell";
 import {
-  appValues, applyAppearance, beforeCloseSettings, groupItems, initShell, modeSwitch, openSettingsWindow, renderStyle, renderToolbar,
+  appValues, applyAppearance, applyAppSettings, beforeCloseSettings, groupItems, initShell, modeSwitch, openSettingsWindow, renderStyle, renderToolbar,
   settingsSection, shellTest, showSection,
   ask as askChoice,
 } from "./shell";
@@ -590,8 +590,12 @@ function menuModel(): { key: string; items: MenuItem[] }[] {
       { label: t("menu.example"), action: () => openExample() },
       // F9 (M5): the start-up checks on demand, with the theme self-test.
       { label: t("menu.checkInstallation"), action: () => openCheckDialog() },
-      // F21 (M6 part C): the only network request the app makes.
+      // F21 (M6 part C): with Download and install (F22), the only network
+      // requests the app makes.
       { label: t("menu.checkUpdates"), action: () => checkForUpdates() },
+      // F22 (M6 part C5): offered only while a version from the author's
+      // folder runs; the next start runs the previous version.
+      ...(versionInfo?.back ? [{ label: t("menu.goBack", { version: versionInfo.back }), action: () => goBack() }] : []),
       // F19 (M5): the author guides, opened inside the app.
       { label: t("menu.guideTheme"), action: () => openGuide("guide-theme") },
       { label: t("menu.guideGameSystem"), action: () => openGuide("guide-game-system") },
@@ -2162,9 +2166,10 @@ function onSelfTest(reply: any): void {
   document.body.dataset.selfTestDone = String(Number(document.body.dataset.selfTestDone || 0) + 1);
 }
 
-// --- the update check (F21, M6 part C) -------------------------------------------------
+// --- the update check (F21, M6 part C) and installing updates (F22, C5) ---------------
 
 let updateWanted = false;
+let versionInfo: { running: string; builtin: string; back: string | null; notice: any } | null = null;
 
 /** Help ▸ Check for updates…: reads the update file in the background. */
 async function checkForUpdates(): Promise<void> {
@@ -2172,12 +2177,15 @@ async function checkForUpdates(): Promise<void> {
   $("update-text").textContent = t("update.checking");
   $("update-note-box").classList.add("hidden");
   $("update-open").classList.add("hidden");
+  $("update-install").classList.add("hidden");
+  $("update-install-text").classList.add("hidden");
+  $("update-address").textContent = "";
   if (!dialog.open) dialog.showModal();
   updateWanted = true;
   await call("checkForUpdates");
 }
 
-function onUpdateChecked(r: any): void {
+async function onUpdateChecked(r: any): Promise<void> {
   // The weekly check stays quiet unless a newer version exists (F21.4).
   if (r?.auto ? r.state !== "newer" : !updateWanted) return;
   if (!r.auto) updateWanted = false;
@@ -2187,18 +2195,78 @@ function onUpdateChecked(r: any): void {
     current: t("update.current", { current: r.current }),
     unreachable: t("update.unreachable"),
     invalid: t("update.invalid"),
+    unsigned: t("update.unsigned"),
+    "no-key": t("update.noKey"),
   };
   const newer = r.state === "newer";
-  $("update-text").textContent = newer
+  let text = newer
     ? t("update.newer", { version: r.version, current: r.current }) + (r.download ? "" : " " + t("update.noDownload"))
     : texts[r.state] ?? texts.invalid;
+  // F22.2: a version that needs a newer Python, Qt or Typst offers only the download page.
+  if (newer && r.needsInstaller) text += " " + t("update.needsInstaller");
+  $("update-text").textContent = text;
   $("update-note").textContent = newer ? r.note || "" : "";
   $("update-note-box").classList.toggle("hidden", !(newer && r.note));
   $("update-open").classList.toggle("hidden", !(newer && r.download));
+  $("update-open").classList.toggle("primary", !(newer && r.installable));
+  $("update-install").classList.toggle("hidden", !(newer && r.installable));
+  $<HTMLButtonElement>("update-install").disabled = false;
+  $("update-install-text").classList.add("hidden");
+  // F22: the window shows which address it used.
+  $("update-address").textContent = r.address
+    ? t(r.entered ? "update.addressEntered" : "update.addressBuiltIn", { address: r.address })
+    : "";
   const dialog = $<HTMLDialogElement>("update-dialog");
   if (!dialog.open) dialog.showModal();
   document.body.dataset.updateState = r.state;
   document.body.dataset.updateDone = String(Number(document.body.dataset.updateDone || 0) + 1);
+  // F22: a signed update file may say that the address has moved.
+  if (r.moved) {
+    const answer = await askChoice(t("update.moved", { address: r.moved }), t("update.movedYes"), "", t("update.movedNo"));
+    if (answer === "yes") {
+      const reply = await call("useMovedAddress");
+      if (reply?.app) applyAppSettings(reply.app);
+    }
+    document.body.dataset.movedDone = String(Number(document.body.dataset.movedDone || 0) + 1);
+  }
+}
+
+/** F22: Download and install. Nothing is downloaded until this is clicked. */
+async function installUpdate(): Promise<void> {
+  $<HTMLButtonElement>("update-install").disabled = true;
+  $("update-install-text").textContent = t("update.installing");
+  $("update-install-text").classList.remove("hidden");
+  await call("installUpdate");
+}
+
+function onUpdateInstalled(r: any): void {
+  const reasons: Record<string, string> = {
+    unreachable: t("update.installUnreachable"),
+    runtime: t("update.needsInstaller"),
+  };
+  $("update-install-text").textContent = r?.ok ? t("update.ready") : reasons[r?.reason] ?? t("update.installRefused");
+  $("update-install-text").classList.remove("hidden");
+  $("update-install").classList.toggle("hidden", !!r?.ok);
+  $<HTMLButtonElement>("update-install").disabled = false;
+  document.body.dataset.installState = r?.ok ? "ready" : r?.reason ?? "failed";
+  document.body.dataset.installDone = String(Number(document.body.dataset.installDone || 0) + 1);
+}
+
+/** F22.5: what the start-up step has to say, and Help ▸ Go back to version X. */
+async function loadVersionInfo(): Promise<void> {
+  versionInfo = await call("versionInfo");
+  const notice = versionInfo?.notice;
+  if (notice?.kind === "failed") showMessage(t("update.wentBack", { version: notice.version, back: notice.back_to }));
+  else if (notice?.kind === "back") showMessage(t("update.backDone", { version: notice.back_to }));
+}
+
+async function goBack(): Promise<void> {
+  const back = versionInfo?.back;
+  if (!back) return;
+  const answer = await askChoice(t("update.goBackAsk", { version: back }), t("update.goBackYes"), "", t("dialog.cancel"));
+  if (answer !== "yes") return;
+  const reply = await call("goBack");
+  if (reply?.ok) showMessage(t("update.goBackReady", { version: reply.version }));
 }
 
 /** F21.4: at first start Scriptorum asks once, with the answer off by default;
@@ -2561,6 +2629,8 @@ async function boot(): Promise<void> {
   on("updateChecked", onUpdateChecked);
   $("update-close").addEventListener("click", () => $<HTMLDialogElement>("update-dialog").close());
   $("update-open").addEventListener("click", () => call("openDownloadPage"));
+  $("update-install").addEventListener("click", () => installUpdate());
+  on("updateInstalled", onUpdateInstalled);
   initZoom();
   $("zoom-window").addEventListener("click", () => call("openPreviewWindow"));
   $("startup-bar-close").addEventListener("click", () => $("startup-bar").classList.add("hidden"));
@@ -2575,6 +2645,7 @@ async function boot(): Promise<void> {
   await call("uiReady");
   await showStartupReport();
   await offerRecovery();
+  await loadVersionInfo();
   await offerUpdateQuestion();
 }
 
@@ -2638,7 +2709,7 @@ async function boot(): Promise<void> {
   fullScreen: () => fullScreen,
   about: aboutTest,
   // M6 part C: the update check (F21)
-  updates: { check: checkForUpdates, offer: offerUpdateQuestion },
+  updates: { check: checkForUpdates, offer: offerUpdateQuestion, install: installUpdate, loadVersionInfo, goBack },
   pickVersion,
   endVersionPreview,
   groupItems,

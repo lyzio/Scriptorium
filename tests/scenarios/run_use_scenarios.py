@@ -444,6 +444,7 @@ def use_02(window: MainWindow) -> dict:
     portrait_steps(s, window)
     sub_heading_steps(s, window)
     codex_steps(s, window)
+    update_steps(s, window)
     return s.summary()
 
 
@@ -692,7 +693,11 @@ def portrait_steps(s: Scenario, window: MainWindow) -> None:
     s.steps += 1
     s.log.append(f"{s.steps:>3}. Export PDF -> ok={reply.get('ok')}")
     s.check("PDF exported with the portrait", bool(reply.get("ok")))
-    # Help ▸ Check for updates… with the placeholder address.
+    # Help ▸ Check for updates… with the placeholder address. From 0.6.7 the
+    # built-in address is the real one, so the step sets the placeholder, as
+    # a copy without an address would hold it (and no request leaves the run).
+    from scriptorum.core import updates as _updates
+    window.bridge.update_url = _updates.PLACEHOLDER
     s.act("Help → Check for updates…", "window.__u.menu('Help'); window.__u.pick('Check for updates…')", 1200)
     message = s.js("document.getElementById('update-text').textContent") or ""
     s.check("it says no update address is set yet", message.startswith("No update address is set yet"))
@@ -854,6 +859,61 @@ def codex_steps(s: Scenario, window: MainWindow) -> None:
     s.steps += 1
     s.log.append(f"{s.steps:>3}. Export PDF -> ok={reply.get('ok')}")
     s.check("PDF with codex cards and a clue exported", bool(reply.get("ok")))
+
+
+def update_steps(s: Scenario, window: MainWindow) -> None:
+    """Milestone 6 part C5 steps of T-USE-02 (build M6-0.6.7): the Game
+    Master sets an update address, looks for an update, installs it with
+    Download and install while the adventure is open, and checks that long
+    paragraphs use the full width (issue #8). The update file and pack come
+    from the tests' own key, since the project's key is made by the project
+    manager (tools/release.py keygen)."""
+    from scriptorum.core import update_key, updates
+    from tests.test_m6c5 import pack_bytes, update_info
+    from tests.update_keys import PUBLIC, signed
+
+    s.act("Settings ▸ Application", "window.__scriptorum.openSettingsWindow('application')", 500)
+    s.check("an Update address field", bool(s.js("!!document.getElementById('app-updateAddress')")))
+    s.act("Type an http address", """(() => { const i = document.getElementById('app-updateAddress');
+        i.value = 'http://example.org/update.json'; i.dispatchEvent(new Event('change')); return true; })()""", 500)
+    s.check("an http address is refused with a plain message",
+            (s.js("document.getElementById('app-updateAddressError').textContent") or "").startswith("Only a secure https"))
+    s.act("Type an https address", """(() => { const i = document.getElementById('app-updateAddress');
+        i.value = 'https://example.org/scriptorium-update.json'; i.dispatchEvent(new Event('change')); return true; })()""", 500)
+    s.check("the https address is stored",
+            window.bridge.session.app_settings.get("update_address") == "https://example.org/scriptorium-update.json")
+    s.act("Close Settings", "window.__u.click('#settings-close')", 300)
+    data = pack_bytes("9.9.9")
+    window.bridge.update_opener = lambda url: signed(update_info("9.9.9", data, "https://example.org/pack.zip"))
+    window.bridge.update_downloader = lambda url: data
+    from scriptorum.core.packs import Versions
+    window.bridge.versions = Versions(OUT / "update-home")
+    saved = update_key.PUBLIC_KEY
+    update_key.PUBLIC_KEY = ""
+    s.act("Help ▸ Check for updates…", "window.__scriptorum.updates.check(); true", 1500)
+    no_key = s.js("document.getElementById('update-text').textContent") or ""
+    s.check("a copy without a key says it cannot trust an update file", "no update key" in no_key)
+    update_key.PUBLIC_KEY = PUBLIC   # the tests' own key stands in for the project's
+    s.act("Help ▸ Check for updates… (with a key)", "window.__scriptorum.updates.check(); true", 1500)
+    s.check("a newer version is offered with Download and install",
+            s.js("!document.getElementById('update-install').classList.contains('hidden')") is True)
+    s.check("the window names the address it used",
+            "entered in Settings" in (s.js("document.getElementById('update-address').textContent") or ""))
+    s.shot("update-offer")
+    s.act("Download and install", "window.__u.click('#update-install')", 2500)
+    ready = s.js("document.getElementById('update-install-text').textContent") or ""
+    s.check("Ready. The update is installed the next time Scriptorum starts.", ready.startswith("Ready."))
+    s.check("the adventure is still open", bool(s.state()["text"]))
+    s.act("Close", "window.__u.click('#update-close')", 300)
+    update_key.PUBLIC_KEY = saved
+    window.bridge.session.app_settings.update({"update_address": ""})
+    # Issue #8: a long paragraph uses the editor's full width.
+    s.act("Click into the first scene", "window.__u.focus('#visual .el-scene .rich', 0)")
+    s.act("Type a long paragraph", "window.__u.type('#visual .el-scene .rich', 0, ' And then a much longer stretch of text. ' .repeat(20))")
+    widths = s.js("""(() => { const r = document.querySelector('#visual .el-scene .rich');
+        return [r.getBoundingClientRect().width, r.closest('.blk').getBoundingClientRect().width]; })()""") or [0, 1]
+    s.check("the paragraph fills the width of its block (issue #8)", abs(widths[0] - widths[1]) <= 2)
+    s.shot("full-width")
 
 
 def _scenario_png(width: int = 2400, height: int = 1600) -> bytes:

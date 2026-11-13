@@ -1,0 +1,52 @@
+# The release job (design document F22 and D12, decided 13 November 2026).
+#
+# Pushing an accepted build's tag v<version> on main makes the release: the
+# job runs in the environment "release" (where the project manager can require
+# his approval), runs the release script with the private key from the
+# repository secret UPDATE (the whole key file, BEGIN and END lines included),
+# and attaches the signed update
+# file and the update pack to the GitHub release v<version>. The note is the
+# tag's message: git tag -a v0.6.8 -m "What is new." The installers are added
+# to the same release afterwards. It runs on a standard GitHub runner, free for
+# a public repository. Nothing here builds the app or the installers.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write          # only to make the release and attach its files
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    environment: release
+    timeout-minutes: 15
+    steps:
+      - name: Get the tagged commit and main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Get the tags with their messages
+        run: git fetch --force --tags origin
+
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: The signature library, at its pinned version
+        run: python -m pip install "cryptography==48.0.1"
+
+      - name: Make, check and publish the release
+        env:
+          SCRIPTORUM_SIGNING_KEY: ${{ secrets.UPDATE }}
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/release.py "${GITHUB_REF_NAME#v}" --note-from-tag --publish

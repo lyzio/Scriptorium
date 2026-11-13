@@ -24,6 +24,7 @@
   "what.chromium": "Shows the interface inside the window",
   "what.typst": "Typesets the adventure and its PDFs",
   "what.spylls": "Spell check",
+  "what.cryptography": "Checks the project's signature on updates",
   "what.cytoscape": "The relationship chart in the app",
   "what.phosphor": "Toolbar icons",
   "what.package.fletcher": "The printed relationship chart",

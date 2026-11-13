@@ -19,6 +19,20 @@ SAMPLES = ROOT / "tests" / "samples"
 sys.path.insert(0, str(ROOT))
 
 
+@pytest.fixture(scope="session", autouse=True)
+def update_test_key():
+    """F22 (M6-0.6.7): the app trusts the tests' own key while they run, never
+    the project's; tests of a copy without a key set it back to empty."""
+    from scriptorum.core import update_key
+    from tests.update_keys import PUBLIC
+
+    saved = update_key.PUBLIC_KEY
+    update_key.PUBLIC_KEY = PUBLIC
+    os.environ["SCRIPTORUM_NO_UPDATES"] = "1"   # no test starts a kept version by accident
+    yield PUBLIC
+    update_key.PUBLIC_KEY = saved
+
+
 @pytest.fixture(scope="session")
 def home(tmp_path_factory) -> Path:
     path = tmp_path_factory.mktemp("scriptorum-home")

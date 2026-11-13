@@ -47,6 +47,7 @@
   "example": "Open the example adventure",
   "checkInstallation": "Check installation…",
   "checkUpdates": "Check for updates…",
+  "goBack": "Go back to version {version}",
   "hideBreaks": "Hide breaks",
   "exportBooklet": "Booklet PDF (two pages per sheet)…",
   "exportPrintShop": "Print-shop PDF (bleed, crop marks, PDF/A)…",

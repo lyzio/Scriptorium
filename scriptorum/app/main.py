@@ -198,7 +198,9 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("adventure", nargs="?", help="a .scav file to open")
     args, qt_args = parser.parse_known_args(argv if argv is not None else sys.argv[1:])
 
-    app = QApplication([sys.argv[0], *qt_args])
+    # F22: when a newer version failed to start, the installed version starts
+    # in the same process, so the application object may exist already.
+    app = QApplication.instance() or QApplication([sys.argv[0], *qt_args])
     crashlog.install()  # F2.11: crash logs stay on this computer
     # F16: Shift held while the app starts skips a palette's stylesheet.
     skip_css = bool(QGuiApplication.queryKeyboardModifiers() & Qt.KeyboardModifier.ShiftModifier)

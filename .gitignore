@@ -7,3 +7,4 @@ build/
 dist/
 !scriptorum/ui/dist/
 scenario-output/
+dist-release/

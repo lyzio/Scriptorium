@@ -158,6 +158,14 @@ async function setApp(changes: Record<string, unknown>): Promise<void> {
   if (currentSection) renderSection(currentSection);
 }
 
+/** Take app settings the core changed itself (F22: a moved update address). */
+export function applyAppSettings(info: any): void {
+  if (!info) return;
+  app = info;
+  applyAppearance();
+  if (currentSection && !$("settings").classList.contains("hidden")) renderSection(currentSection);
+}
+
 /** The small Light / Dark switch at the right end of the menu bar (F9, F16). */
 function renderModeSwitch(): void {
   const host = document.getElementById("mode-switch");
@@ -386,6 +394,36 @@ function renderApplication(): void {
   const label = h("label", "settings-check");
   label.append(weekly, h("span", undefined, t("settings.app.updateWeekly")));
   page.append(label, h("p", "settings-note", t("settings.app.updateNote")));
+  // F22 (M6 part C5): the Update address. Empty means the built-in address;
+  // only https is accepted; Use built-in address clears the field.
+  const address = h("input");
+  address.type = "url";
+  address.id = "app-updateAddress";
+  address.spellcheck = false;
+  address.placeholder = t("settings.app.updateAddressBuiltIn");
+  address.value = v.update_address || "";
+  const error = h("p", "settings-error hidden");
+  error.id = "app-updateAddressError";
+  error.setAttribute("role", "alert");
+  const store = async (value: string) => {
+    const reply = await call("setUpdateAddress", value);
+    if (reply?.ok) {
+      app = reply.app;
+      error.classList.add("hidden");
+      address.value = app.values.update_address || "";
+    } else {
+      error.textContent = reply?.error ?? "";
+      error.classList.remove("hidden");
+    }
+  };
+  address.addEventListener("change", () => store(address.value));
+  const builtIn = h("button", "small-btn", t("settings.app.updateAddressReset"));
+  builtIn.type = "button";
+  builtIn.id = "app-updateAddressReset";
+  builtIn.addEventListener("click", () => { address.value = ""; store(""); });
+  const addressRow = h("div", "settings-row update-address-row");
+  addressRow.append(h("span", undefined, t("settings.app.updateAddress")), address, builtIn);
+  page.append(addressRow, error, h("p", "settings-note", t("settings.app.updateAddressNote")));
   page.append(h("h3", undefined, t("settings.app.language")));
   page.append(row(t("settings.app.interfaceLanguage"), select(
     app.languages.map((l: any) => [l.id, l.name]), v.language, (x) => setApp({ language: x }), "app-language")));
