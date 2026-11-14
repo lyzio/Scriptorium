@@ -32,7 +32,7 @@ Every file not listed here is unchanged from M6-0.6.8.
 | `ui-src/editor.ts` | `setLevels` (Raise all in one undo step); a clue item's text saved on leaving the box; several error lines in Source mode |
 | `scriptorum/ui/dist/app.js` | Built from `ui-src/` |
 | `scriptorum/bundled/scriptorum.en/strings/*.json` | Texts for Change game system, the fit warnings, Raise all and the adopted clue text |
-| `packaging/build.py`, `packaging/kit.json` | Kit 1.0.3: macOS signed from the inside out, never with --deep |
+| `packaging/build.py`, `packaging/kit.json` | Kit 1.0.3: a stray `Versions/Resources` in Qt's web-engine framework is moved into `Versions/A`; macOS signed from the inside out, never with --deep |
 | `packaging/README.md`, `packaging/docs/BUILD-MACOS.md` | Kit 1.0.3 and the signing |
 | `.github/workflows/installers.yml` | The attach job runs unless the run is cancelled, and says so when nothing built |
 | `tests/test_m5.py` | T-MOD-13: a die outside Vaesen's notation now prints as text with a warning (corrected, F14) |

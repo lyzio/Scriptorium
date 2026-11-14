@@ -370,3 +370,36 @@ def test_T_REL_12_attached_when_one_platform_fails():
     assert "if: ${{ !cancelled() && (github.event_name == 'push' || inputs.attach) }}" in attach
     assert "needs: build" in attach and "fail-fast: false" in text
     assert "No platform built an installer" in attach
+
+
+@pytest.mark.unit
+def test_T_REL_12_stray_framework_folder_repaired(tmp_path):
+    """T-REL-12: a stray Versions/Resources beside Versions/A (as in the
+    frozen Qt web-engine framework, which macOS refused to sign) is moved
+    into the version folder; links inside it still reach their files; only
+    the real version folder is signed."""
+    import os
+    kit = _kit()
+    app = tmp_path / "Scriptorum.app"
+    data = app / "Contents" / "Resources" / "PySide6" / "data"
+    data.mkdir(parents=True)
+    (data / "qtwebengine_resources.pak").write_bytes(b"pak")
+    fw = app / "Contents" / "Frameworks" / "PySide6" / "Qt" / "lib" / "QtWebEngineCore.framework"
+    (fw / "Versions" / "A").mkdir(parents=True)
+    (fw / "Versions" / "A" / "QtWebEngineCore").write_bytes(MACHO)
+    (fw / "Versions" / "Current").symlink_to("A")
+    stray = fw / "Versions" / "Resources"
+    stray.mkdir()
+    (stray / "Info.plist").write_text("plist")
+    (stray / "qtwebengine_resources.pak").symlink_to(os.path.relpath(data / "qtwebengine_resources.pak", stray))
+    (fw / "Versions" / "A" / "Resources").symlink_to("../Resources")
+    (fw / "Resources").symlink_to("Versions/Current/Resources")
+    assert kit.repair_frameworks(app) == ["QtWebEngineCore.framework/Versions/Resources -> Versions/A/Resources"]
+    moved = fw / "Versions" / "A" / "Resources"
+    assert moved.is_dir() and not moved.is_symlink()
+    assert (moved / "qtwebengine_resources.pak").read_bytes() == b"pak"
+    assert (fw / "Resources" / "Info.plist").read_text() == "plist"
+    assert sorted(p.name for p in (fw / "Versions").iterdir()) == ["A", "Current"]
+    assert kit.repair_frameworks(app) == []
+    names = [p.relative_to(app).as_posix() for p in kit.macos_signing_order(app)]
+    assert names[-2:] == ["Contents/Frameworks/PySide6/Qt/lib/QtWebEngineCore.framework/Versions/A", "."]
