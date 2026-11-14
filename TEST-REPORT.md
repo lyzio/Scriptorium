@@ -23,7 +23,7 @@ Built on M6-0.6.8 (accepted). Before any change, the 0.6.8 suite ran here and pa
 | T-UI-48 | Pass | New (issue #6). Three headings that skip a level: Raise all raises all three in one undo step; with one such heading there is no Raise all |
 | T-WORLD-34 | Pass | New (issue #7). Text typed into a new clue's item becomes the clue's description when leaving the box; a second item of the clue shows it; undo takes it back; a clue with a description is never overwritten |
 | T-WORLD-28 | Pass | Issue #11: run three more times together with the C2 tests, 36 passed each time |
-| T-REL-12 | Pass here, Pending on GitHub | New, three tests. A first test run on GitHub of this branch found the real cause: Qt's web-engine framework has a stray `Versions/Resources` beside `Versions/A`, which macOS cannot sign; the kit now moves it into `Versions/A`, keeping every link inside it. The macOS signing order is from the inside out (libraries and helper programs, then bundles, a framework by its version folder, the app last) and never uses --deep; the attach job runs unless the run is cancelled. Whether both .dmg files now build is seen on GitHub (below) |
+| T-REL-12 | Pass (GitHub: built; Mac start Pending) | New, three tests. A first test run on GitHub of this branch found the real cause: Qt's web-engine framework has a stray `Versions/Resources` beside `Versions/A`, which macOS cannot sign; the kit now moves it into `Versions/A`, keeping every link inside it. A second test run (Actions run 43568919050, Run workflow on `build/0.6.9`, nothing attached) built all four installers; both .dmg files report "valid on disk" and "satisfies its Designated Requirement" (438 parts signed). The kit's smoke test runs before this step, so the moved folder is checked by starting the app on a real Mac (hand check 5) The macOS signing order is from the inside out (libraries and helper programs, then bundles, a framework by its version folder, the app last) and never uses --deep; the attach job runs unless the run is cancelled. Whether both .dmg files now build is seen on GitHub (below) |
 | T-REL-04 … 09, T-REL-11 | Pass | T-REL-09 corrected (below) |
 | T-BUILD-03 | Pending | Compare the checksum below on your machine |
 | T-REL-02 | Pending | Network check on your machine |
@@ -55,7 +55,7 @@ T-MOD-26 (4 tests), T-BUILD-32, T-UI-48, T-WORLD-34, T-REL-12 (3). All are in th
 2. **Issue #12:** empty a scene title and a person's name, and check that both errors show at once.
 3. **Issue #7:** Insert ▸ Clue ▸ New clue…, type into the item, click elsewhere, then insert the same clue again.
 4. **Issue #6:** in an adventure with several headings that skip a level, open the warnings and press Raise all.
-5. **The installers:** once this build is merged and tagged, the Installers run should build both .dmg files. If macOS still refuses, the log names the part it refused on the line before the failure. Then T-REL-10 on a Mac, including the Intel .dmg on macOS 12.
+5. **The installers on a Mac:** the test run's downloads (Actions ▸ Installers ▸ run 43568919050 ▸ Artifacts) hold both .dmg files of this build. Install one on your Mac and check that it starts, that the live preview shows pages, and that a .scav opens by double-click: Qt's web engine reads its files from the folder the kit moved. Then T-REL-10, including the Intel .dmg on macOS 12. Once merged and tagged, the Installers run attaches all four to the release.
 
 ## Sample checksum (Linux)
 
