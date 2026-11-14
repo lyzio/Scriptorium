@@ -38,6 +38,7 @@ Every file not listed here is unchanged from M6-0.6.8.
 | `tests/test_m5.py` | T-MOD-13: a die outside Vaesen's notation now prints as text with a warning (corrected, F14) |
 | `tests/test_m6d.py` | T-REL-09: the new attach condition and kit 1.0.3 (corrected) |
 | `tests/test_m6c3.py` | T-WORLD-28 waits for the pin settings (#11) |
+| `tests/test_m6c5.py` | T-UI-46: the 100-character check goes by the editor column's real width (failed on the project manager's Mac) |
 | `tests/scenarios/run_use_scenarios.py` | The Change game system steps |
 | `CHANGELOG.md` | The 0.6.9 section |
 | `CHANGES.md`, `TEST-REPORT.md` | This build |

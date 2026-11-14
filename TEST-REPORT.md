@@ -43,6 +43,7 @@ The clue finding of 0.6.6 is fixed (issue #7). No new issues were opened.
 
 - **T-MOD-13** (`tests/test_m5.py`): its last check expected a Vaesen adventure with a 2d10+1 to fail to build. From 0.6.9 a die outside the game system's notation prints as plain text with a warning on its line (F14, Change game system), so the check now expects that warning. The design changed, not the app's correctness.
 - **T-REL-09** (`tests/test_m6d.py`): it checked the attach job's old condition word for word, and kit 1.0.2. The attach job now runs unless the run is cancelled (T-REL-12), and the kit is 1.0.3.
+- **T-UI-46** (`tests/test_m6c5.py`), found in your Mac run of 0.6.9: it decided whether the window was wide from the 2400 px it asked for, which macOS reports even when the screen gives the editor column only about 970 px, so it expected text wider than the column. The paragraph did fill the column (the check before it passed). The 100-character check now goes by the column's real width. Not a fault in the app.
 - **T-WORLD-28** (`tests/test_m6c3.py`, issue #11): it waited a fixed 0.2 s for the new pin's settings; it now waits until they are shown.
 
 ## Tests added
