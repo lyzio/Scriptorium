@@ -49,7 +49,7 @@ The .dmg holds `Scriptorum.app`, a shortcut to Applications and `Read me first.t
 
 ## 4. Signing
 
-The app is not signed with a paid Apple certificate (D6). It gets an *ad-hoc* signature, which is free: a Mac with Apple silicon refuses to run a program with no signature at all. Because it is not notarised, macOS asks the user to confirm it on the first start. The install notes (`user-docs/INSTALL-macOS.txt`) explain how, for macOS 15 and newer (System Settings › Privacy & Security › Open Anyway) and for macOS 12 to 14 (right-click › Open).
+The app is not signed with a paid Apple certificate (D6). It gets an *ad-hoc* signature, which is free, on every part from the inside out (libraries and helper programs, then each framework, then the app; from kit 1.0.3, since signing the whole app in one pass with `--deep` was refused for Qt's web-engine framework): a Mac with Apple silicon refuses to run a program with no signature at all. Because it is not notarised, macOS asks the user to confirm it on the first start. The install notes (`user-docs/INSTALL-macOS.txt`) explain how, for macOS 15 and newer (System Settings › Privacy & Security › Open Anyway) and for macOS 12 to 14 (right-click › Open).
 
 ## 5. Test it (T-REL-01, T-REL-02, T-REL-03)
 
@@ -74,5 +74,5 @@ No output means pass.
 | `Python 3.13 is needed` | Install Python 3.13 from python.org (section 1). |
 | `pyproject.toml does not pin …` | The app's pyproject.toml lacks an exact pin (`name==version`) for that library. From kit 1.0.2 the kit builds with exactly the versions the app pins, so there is nothing to change in the kit. |
 | `[smoke] start: FAIL …` | A part of the app was not packed, or the app did not start. The message names the reason; tell the developer. |
-| `codesign … failed` | Run the build again; if it repeats, delete `work/` and build once more. |
+| `codesign … failed` | Run the build again; if it repeats, delete `work/` and build once more. The line before the failure names the part that was refused. |
 | "Scriptorum is damaged and can't be opened" on another Mac | The ad-hoc signature was broken after the build, usually by copying the app with a tool that drops extended attributes. Copy the .dmg itself, not the app. |

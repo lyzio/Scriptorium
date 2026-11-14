@@ -47,7 +47,8 @@ def test_T_REL_09_installers_workflow():
     assert "python kit/packaging/build.py app --out out $flags" in text
     assert 'FOR_RELEASE: ${{ github.event_name == \'push\' }}' in text and 'flags="--release"' in text
     assert "actions/upload-artifact@v4" in text and "if-no-files-found: error" in text
-    assert "if: github.event_name == 'push' || inputs.attach" in text
+    # Corrected for M6-0.6.9 (T-REL-12): attaching runs when one platform failed too.
+    assert "if: ${{ !cancelled() && (github.event_name == 'push' || inputs.attach) }}" in text
     assert 'gh release view "$TAG"' in text and "gh release upload" in text and "--clobber" in text
     assert "prerelease" not in text and "release create" not in text   # the release job makes it (F22)
     top, jobs = text.split("\njobs:", 1)
@@ -67,7 +68,7 @@ def test_T_REL_09_kit_takes_the_pins_from_the_app(tmp_path):
     needed library is refused; cryptography is needed from 0.6.7."""
     kit = kit_module()
     config = json.loads((KIT / "kit.json").read_text("utf-8"))
-    assert "pins" not in config and config["kit_version"] == "1.0.2"
+    assert "pins" not in config and config["kit_version"] == "1.0.3"  # 1.0.3 from M6-0.6.9 (T-REL-12)
     assert kit.read_pins(ROOT) == app_pins()
     assert {"PySide6", "typst", "spylls", "cryptography"} <= set(app_pins())
     for text in (KIT / "build.py").read_text("utf-8"), (KIT / "common" / "scriptorum.spec").read_text("utf-8"):

@@ -73,7 +73,8 @@
   "knownBy": "Known by:",
   "clueText": "The clue's text, written once in its codex entry:",
   "editClue": "Edit the clue",
-  "clueEmpty": "The clue has no description yet, so this item's own text prints.",
+  "clueEmpty": "The clue has no description yet. What you write here becomes its description when you leave the box.",
+  "clueAdopted": "This text is now the description of the clue “{title}”.",
   "inCard": "known here (this card)",
   "typeCard": "Shown in the text as",
   "typeCardPlain": "A codex card"

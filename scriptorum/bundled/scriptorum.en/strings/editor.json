@@ -58,6 +58,8 @@
   "lower": "Lower",
   "raiseTo": "Raise to Sub-heading {level}",
   "raised": "“{title}” is now a Sub-heading {level}.",
+  "raiseAll": "Raise all {count} headings",
+  "raisedAll": "{count} headings raised. Undo brings them back.",
   "dropHere": "Drop here",
   "reason.personCard": "A person card holds only Information.",
   "reason.countdown": "A countdown holds only its steps.",

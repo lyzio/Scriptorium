@@ -65,6 +65,7 @@
   "module.unsafeEntry": "The file contains “{entry}”, which would be unpacked outside the module's own folder. The module was not installed.",
   "module.sameVersion": "{name} {version} is already installed with different content. One version number can stand for one content only, because adventures use exact versions. Ask the module's author for a new version number.",
   "module.notInstalled": "{id} {version} is not installed.",
+  "gameSystem.pickTheme": "The theme is not offered for {game}. Pick a theme made for {game}, or a general theme.",
   "module.alwaysOn": "{id} cannot be disabled or removed, because Scriptorum falls back on it.",
   "module.bundled": "{name} comes with Scriptorum, so it cannot be removed or saved as a file. It can be disabled.",
   "module.requiredBy": "{name} cannot be removed while these modules need it: {by}. Remove them first.",

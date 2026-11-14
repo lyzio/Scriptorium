@@ -100,7 +100,9 @@ jobs:
   attach:
     name: Attach to the release
     needs: build
-    if: github.event_name == 'push' || inputs.attach
+    # F10 (M6-0.6.9): runs when one platform failed too, so the installers
+    # that did build are attached; v0.6.8 skipped it when both Macs failed.
+    if: ${{ !cancelled() && (github.event_name == 'push' || inputs.attach) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -120,6 +122,11 @@ jobs:
             v[0-9]*) ;;
             *) echo "Attaching needs a tag such as v0.6.7, not '$TAG'." >&2; exit 1 ;;
           esac
+          if [ -z "$(ls -A out 2>/dev/null)" ]; then
+            echo "No platform built an installer, so there is nothing to attach." >&2
+            exit 1
+          fi
+          echo "Attaching: $(ls out | tr '\n' ' ')"
           for attempt in $(seq 1 40); do
             if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
               gh release upload "$TAG" out/* --clobber --repo "$GITHUB_REPOSITORY"

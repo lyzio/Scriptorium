@@ -164,9 +164,13 @@ async function undo(): Promise<void> {
   if (mark !== undefined && mark >= state.historyPos) {
     // The last change was in the codex, a map or the chart.
     state.worldMarks.pop();
+    const system = [state.info?.gameSystem?.id, state.info?.theme?.id].join(" ");
     const reply = await call("worldUndo");
     if (reply?.ok) {
-      await reloadAfterWorld();
+      const info = await call("info");
+      // F14 (M6-0.6.9): undoing Change game system brings back its elements.
+      if ([info?.gameSystem?.id, info?.theme?.id].join(" ") !== system) await refresh();
+      else await reloadAfterWorld();
       flashStatus(t("status.undone"));
     }
     return;
@@ -424,7 +428,64 @@ async function pickVersion(which: "gameSystem" | "theme", version: string): Prom
 }
 
 async function endVersionPreview(apply: boolean): Promise<void> {
+  const system = state.info?.versionPreview?.which === "system";
   await call(apply ? "applyVersion" : "cancelVersion");
+  await refresh();
+  // F14 (M6-0.6.9): applying another game system is one undo step.
+  if (apply && system) state.worldMarks.push(state.historyPos);
+}
+
+/** F14 (Change game system, decided 14 Nov 2026, M6-0.6.9): another game
+ *  system, tried in the preview first. Before the preview a list says what
+ *  in the adventure does not fit it; nothing is deleted. */
+async function pickGameSystem(value: string): Promise<void> {
+  const [id, version] = value.split("@");
+  const info = await call("settings");
+  if (state.info?.readOnly) {
+    showMessage(t("codex.readOnly"));
+    fillSettings(info, false);
+    return;
+  }
+  if (id === info.gameSystemId && version === info.versions?.gameSystem?.current) {
+    await call("cancelVersion");
+    await refresh();
+    return;
+  }
+  const fit = await call("gameSystemFit", id, version);
+  if (fit?.ok === false) {
+    $("settings-foot-note").textContent = fit.error ?? "";
+    fillSettings(info, false);
+    return;
+  }
+  let theme = "";
+  let lines: string[] = [];
+  if (!fit.themeOffered) {
+    // A theme made for the new game system, or a general one: the first
+    // offered, which the author can change on this page after Apply.
+    const pick = fit.themes?.[0];
+    if (!pick) {
+      $("settings-foot-note").textContent = t("error.gameSystem.pickTheme", { game: fit.name });
+      fillSettings(info, false);
+      return;
+    }
+    theme = pick.id;
+    lines.push(t("settings.gameSystemTheme", { theme: info.theme, name: fit.name, chosen: pick.name }));
+  }
+  lines = lines.concat((fit.problems ?? []).map((p: any) => "• " + p.text));
+  const head = (fit.problems ?? []).length ? t("settings.gameSystemFit", { name: fit.name }) : t("settings.gameSystemFits", { name: fit.name });
+  const answer = await askChoice([head, ...lines].join("\n"), t("settings.gameSystemTry"), "", t("dialog.cancel"));
+  if (answer !== "yes") {
+    fillSettings(info, false);
+    return;
+  }
+  const reply = await call("previewGameSystem", JSON.stringify({ id, version, theme }));
+  if (reply?.ok === false) {
+    $("settings-foot-note").textContent = reply.error ?? "";
+    fillSettings(info, false);
+    return;
+  }
+  $("settings-foot-note").textContent = "";
+  await closeSettings(); // so the preview and its bar are in view
   await refresh();
 }
 
@@ -941,6 +1002,37 @@ function openWarnings(): void {
     }
     list.append(li);
   }
+  // Issue #6 (M6-0.6.9): with more than one heading that skips a level, Raise
+  // all raises every one, one undo step per chapter.
+  const skipped = items.filter((w) => w.key === "warning.heading.skipsLevel" && w.details?.to && w.line && w.chapter);
+  if (skipped.length > 1 && !state.info?.readOnly) {
+    const li = document.createElement("li");
+    li.className = "raise-all";
+    const all = document.createElement("button");
+    all.type = "button";
+    all.className = "small-btn raise-all-btn";
+    all.textContent = t("editor.raiseAll", { count: skipped.length });
+    all.addEventListener("click", async () => {
+      const chapters = [...new Set(skipped.map((w) => w.chapter as string))];
+      let raised = 0;
+      for (const chapter of chapters) {
+        const index = (state.info?.chapters ?? []).findIndex((c: any) => c.path === chapter);
+        if (index < 0) continue;
+        if (index !== state.chapterIndex) await loadChapter(index, true);
+        if (state.mode === "source") await setMode("visual");
+        const changes = skipped
+          .filter((w) => w.chapter === chapter)
+          .map((w) => ({ block: visual.blockOnLine(w.line), level: Number(w.details.to) }))
+          .filter((c): c is { block: any; level: number } => !!c.block);
+        raised += visual.setLevels(changes);
+      }
+      all.disabled = true;
+      list.querySelectorAll<HTMLButtonElement>(".warning-fix").forEach((b) => (b.disabled = true));
+      flashStatus(t("editor.raisedAll", { count: raised }));
+    });
+    li.append(all);
+    list.prepend(li);
+  }
   $("warnings-panel").classList.remove("hidden");
 }
 
@@ -1235,6 +1327,29 @@ async function convertToCodex(place: Place): Promise<void> {
     }
   }
   await convertWith(path, type.id, link);
+}
+
+/** Issue #7 (M6-0.6.9): while a clue has no description, the text typed into
+ *  its Information item becomes the description, as one undo step. */
+let adopting = false;
+async function adoptClueText(clue: string, markup: string): Promise<void> {
+  if (adopting || state.info?.readOnly) return;
+  adopting = true;
+  try {
+    await flush();
+    const entry = codex.entries.find((e: any) => e.id === clue);
+    if (!entry || entry.text) return;
+    const reply = await call("updateEntry", JSON.stringify({ id: clue, data: { fields: { description: markup } } }));
+    if (!reply?.ok) {
+      showMessage(reply?.error || t("error.codex.failed"));
+      return;
+    }
+    state.worldMarks.push(state.historyPos);
+    await reloadAfterWorld();
+    flashStatus(t("codex.clueAdopted", { title: entry.title }));
+  } finally {
+    adopting = false;
+  }
 }
 
 async function convertWith(path: number[], type: string, link: string | null): Promise<void> {
@@ -1675,8 +1790,7 @@ async function closePopover(): Promise<void> {
 }
 
 function markErrorLine(): void {
-  const error = state.errors.find((e) => e.chapter === state.chapter?.path && e.line);
-  source?.markError(error ? error.line : null);
+  source?.markErrors(state.errors.filter((e) => e.chapter === state.chapter?.path && e.line).map((e) => e.line as number));
 }
 
 function showErrors(): void {
@@ -1775,6 +1889,19 @@ function fillSettings(info: any, values: boolean): void {
   const ro = !!state.info?.readOnly;
   // F8: the game system and the theme are chosen here only; F7.3: the secret box fill.
   $("set-gameSystem").textContent = info.gameSystem ?? "";
+  // F14 (Change game system, M6-0.6.9): every installed game system.
+  const systems = $<HTMLSelectElement>("set-gameSystemPick");
+  systems.textContent = "";
+  for (const g of info.gameSystems ?? []) {
+    const o = document.createElement("option");
+    o.value = g.id + "@" + g.version;
+    o.textContent = g.name;
+    systems.append(o);
+  }
+  const shownSystem = info.versionPreview?.which === "system" ? info.versionPreview : info.versions?.gameSystem;
+  systems.value = shownSystem ? (shownSystem.id ?? info.gameSystemId) + "@" + (shownSystem.version ?? shownSystem.current) : "";
+  systems.disabled = ro || (info.gameSystems ?? []).length < 2;
+  $("set-gameSystem").classList.toggle("hidden", (info.gameSystems ?? []).length > 1);
   const theme = $<HTMLSelectElement>("set-theme");
   theme.textContent = "";
   for (const option of info.themes ?? []) {
@@ -2433,6 +2560,7 @@ async function boot(): Promise<void> {
       return newEntry(type, title ?? "");
     },
     openEntry: (id) => openEntry(id),
+    adoptClueText: (clue, markup) => void adoptClueText(clue, markup),
     openMap: (id) => openMap(id),
     onCollapseChange: () => renderOutline(),
   };
@@ -2538,6 +2666,7 @@ async function boot(): Promise<void> {
   $("w-example").addEventListener("click", () => openExample());
   $("set-theme").addEventListener("change", (e) => settingsChanged("look", "theme", (e.target as HTMLSelectElement).value));
   $("set-gameSystemVersion").addEventListener("change", (e) => pickVersion("gameSystem", (e.target as HTMLSelectElement).value));
+  $("set-gameSystemPick").addEventListener("change", (e) => pickGameSystem((e.target as HTMLSelectElement).value));
   $("set-themeVersion").addEventListener("change", (e) => pickVersion("theme", (e.target as HTMLSelectElement).value));
   $("version-apply").addEventListener("click", () => endVersionPreview(true));
   $("version-cancel").addEventListener("click", () => endVersionPreview(false));

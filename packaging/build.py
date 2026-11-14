@@ -445,6 +445,56 @@ def package_linux(dist: Path, out: Path, version: str, arch: str) -> Path:
     return target
 
 
+# Mach-O magic numbers: 32- and 64-bit, either byte order, and universal ("fat") files.
+MACHO_MAGIC = {bytes.fromhex(h) for h in ("feedface", "cefaedfe", "feedfacf", "cffaedfe", "cafebabe", "bebafeca")}
+
+
+def is_macho(path: Path) -> bool:
+    if path.is_symlink() or not path.is_file() or path.suffix == ".class":
+        return False
+    try:
+        with open(path, "rb") as f:
+            return f.read(4) in MACHO_MAGIC
+    except OSError:
+        return False
+
+
+def macos_signing_order(app: Path) -> list:
+    """F10 (M6-0.6.9): what to sign, from the inside out. First every program
+    and library file, deepest first; then every nested bundle, deepest first
+    (a framework by its real version folders, since macOS refuses Qt's
+    web-engine framework when it is signed as a whole); the app itself last.
+    Signing the app in one pass with --deep stopped both macOS builds of
+    v0.6.8 ("embedded framework contains modified or invalid version")."""
+    def depth(p: Path) -> int:
+        return len(p.relative_to(app).parts)
+
+    contents = app / "Contents"
+    files = sorted((p for p in contents.rglob("*") if is_macho(p)), key=lambda p: (-depth(p), str(p)))
+    bundles = []
+    for p in contents.rglob("*"):
+        if p.is_symlink() or not p.is_dir():
+            continue
+        if p.suffix == ".app":
+            bundles.append(p)
+        elif p.suffix == ".framework":
+            versions = p / "Versions"
+            real = sorted(v for v in versions.iterdir() if v.is_dir() and not v.is_symlink()) if versions.is_dir() else []
+            bundles.extend(real or [p])
+    bundles.sort(key=lambda p: (-depth(p), str(p)))
+    return files + bundles + [app]
+
+
+def sign_macos_app(app: Path) -> None:
+    """F10: an ad-hoc signature on every part, from the inside out, never
+    with --deep; then the whole app is checked as macOS checks it."""
+    order = macos_signing_order(app)
+    say(f"signing {len(order)} parts of the app from the inside out")
+    for part in order:
+        run(["codesign", "--force", "--sign", "-", part], stdout=subprocess.DEVNULL)
+    run(["codesign", "--verify", "--deep", "--strict", "--verbose=2", app])
+
+
 def package_macos(dist: Path, out: Path, version: str, arch: str) -> Path:
     app = dist / "Scriptorum.app"
     resources = app / "Contents" / "Resources"
@@ -452,8 +502,7 @@ def package_macos(dist: Path, out: Path, version: str, arch: str) -> Path:
         shutil.copy2(KIT / "icons" / f"{ext}.icns", resources / f"{ext}.icns")
     # Unsigned (D6), but every Mac with Apple silicon needs at least an ad-hoc
     # signature to run a program; it is free and needs no Apple account.
-    run(["codesign", "--force", "--deep", "--sign", "-", app])
-    run(["codesign", "--verify", "--deep", "--strict", app])
+    sign_macos_app(app)
     stage = dist.parent / "dmg"
     if stage.exists():
         shutil.rmtree(stage)

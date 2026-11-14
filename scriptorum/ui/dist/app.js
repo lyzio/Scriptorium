@@ -1469,10 +1469,18 @@
         }
         const text = typeof block.body === "string" ? block.body : "";
         const onEnter = def.enterAddsNext ? () => this.insert(def.id, place) : void 0;
-        box.append(this.richBox(text, (markup) => {
+        const body = this.richBox(text, (markup) => {
           block.body = markup;
           this.changed(block, place.chain);
-        }, "el-body", def.name, { onEnter }));
+        }, "el-body", def.name, { onEnter });
+        if (clue && clueEntry && !this.readOnly) {
+          body.addEventListener("focusout", () => {
+            const markup = typeof block.body === "string" ? block.body.trim() : "";
+            const now = this.hooks.codexEntries().find((e) => e.id === clue);
+            if (markup && now && !now.text) this.hooks.adoptClueText?.(clue, markup);
+          });
+        }
+        box.append(body);
       } else if (def.body === "blocks") {
         if (!isDoc(block.body)) block.body = { blocks: [], trail: "\n" };
         const inner = el("div", "el-children");
@@ -2018,6 +2026,22 @@
       this.focusBlock(block);
       return true;
     }
+    /** Raise all (issue #6, M6-0.6.9): set several sub-headings' levels in
+     *  one undo step. Each pair is a block and the level it gets. */
+    setLevels(changes) {
+      const chains = [];
+      let done = 0;
+      for (const { block, level } of changes) {
+        const found = this.placeOfBlock(block);
+        if (!found || block.type !== "heading") continue;
+        block.level = level;
+        delete block.raw;
+        chains.push(...found.chain);
+        done++;
+      }
+      if (done) this.commit(chains);
+      return done;
+    }
     /** The block that starts on a line of the chapter (the warnings panel). */
     blockOnLine(line) {
       return this.order().find((b) => b.line === line) ?? null;
@@ -2257,7 +2281,8 @@
   }
   var SourceEditor = class {
     constructor(root, onInput, onCaret) {
-      this.errorLine = null;
+      // F4.10 (issue #12, M6-0.6.9): every line with an error is marked.
+      this.errorLines = /* @__PURE__ */ new Set();
       root.textContent = "";
       this.gutter = el("pre", "gutter", { "aria-hidden": "true" });
       this.area = el("textarea", "source-area", { spellcheck: "false", wrap: "off" });
@@ -2288,8 +2313,8 @@
     caretLine() {
       return this.area.value.slice(0, this.area.selectionStart).split("\n").length;
     }
-    markError(line) {
-      this.errorLine = line;
+    markErrors(lines) {
+      this.errorLines = new Set(lines);
       this.renderGutter();
     }
     goToLine(line) {
@@ -2304,8 +2329,9 @@
       const count = this.area.value.split("\n").length;
       this.gutter.textContent = "";
       for (let i = 1; i <= count; i++) {
-        const span = el("span", i === this.errorLine ? "gl error" : "gl");
-        if (i === this.errorLine) span.title = t("editor.errorLine");
+        const bad = this.errorLines.has(i);
+        const span = el("span", bad ? "gl error" : "gl");
+        if (bad) span.title = t("editor.errorLine");
         span.textContent = String(i) + "\n";
         this.gutter.append(span);
       }
@@ -34754,9 +34780,12 @@
     const mark = state.worldMarks[state.worldMarks.length - 1];
     if (mark !== void 0 && mark >= state.historyPos) {
       state.worldMarks.pop();
+      const system = [state.info?.gameSystem?.id, state.info?.theme?.id].join(" ");
       const reply = await call("worldUndo");
       if (reply?.ok) {
-        await reloadAfterWorld();
+        const info2 = await call("info");
+        if ([info2?.gameSystem?.id, info2?.theme?.id].join(" ") !== system) await refresh();
+        else await reloadAfterWorld();
         flashStatus(t("status.undone"));
       }
       return;
@@ -34981,7 +35010,57 @@
     await refresh();
   }
   async function endVersionPreview(apply2) {
+    const system = state.info?.versionPreview?.which === "system";
     await call(apply2 ? "applyVersion" : "cancelVersion");
+    await refresh();
+    if (apply2 && system) state.worldMarks.push(state.historyPos);
+  }
+  async function pickGameSystem(value) {
+    const [id2, version2] = value.split("@");
+    const info2 = await call("settings");
+    if (state.info?.readOnly) {
+      showMessage(t("codex.readOnly"));
+      fillSettings(info2, false);
+      return;
+    }
+    if (id2 === info2.gameSystemId && version2 === info2.versions?.gameSystem?.current) {
+      await call("cancelVersion");
+      await refresh();
+      return;
+    }
+    const fit2 = await call("gameSystemFit", id2, version2);
+    if (fit2?.ok === false) {
+      $6("settings-foot-note").textContent = fit2.error ?? "";
+      fillSettings(info2, false);
+      return;
+    }
+    let theme = "";
+    let lines = [];
+    if (!fit2.themeOffered) {
+      const pick = fit2.themes?.[0];
+      if (!pick) {
+        $6("settings-foot-note").textContent = t("error.gameSystem.pickTheme", { game: fit2.name });
+        fillSettings(info2, false);
+        return;
+      }
+      theme = pick.id;
+      lines.push(t("settings.gameSystemTheme", { theme: info2.theme, name: fit2.name, chosen: pick.name }));
+    }
+    lines = lines.concat((fit2.problems ?? []).map((p2) => "\u2022 " + p2.text));
+    const head = (fit2.problems ?? []).length ? t("settings.gameSystemFit", { name: fit2.name }) : t("settings.gameSystemFits", { name: fit2.name });
+    const answer = await ask([head, ...lines].join("\n"), t("settings.gameSystemTry"), "", t("dialog.cancel"));
+    if (answer !== "yes") {
+      fillSettings(info2, false);
+      return;
+    }
+    const reply = await call("previewGameSystem", JSON.stringify({ id: id2, version: version2, theme }));
+    if (reply?.ok === false) {
+      $6("settings-foot-note").textContent = reply.error ?? "";
+      fillSettings(info2, false);
+      return;
+    }
+    $6("settings-foot-note").textContent = "";
+    await closeSettings();
     await refresh();
   }
   function renderBanner() {
@@ -35439,6 +35518,32 @@
       }
       list.append(li);
     }
+    const skipped = items.filter((w) => w.key === "warning.heading.skipsLevel" && w.details?.to && w.line && w.chapter);
+    if (skipped.length > 1 && !state.info?.readOnly) {
+      const li = document.createElement("li");
+      li.className = "raise-all";
+      const all = document.createElement("button");
+      all.type = "button";
+      all.className = "small-btn raise-all-btn";
+      all.textContent = t("editor.raiseAll", { count: skipped.length });
+      all.addEventListener("click", async () => {
+        const chapters = [...new Set(skipped.map((w) => w.chapter))];
+        let raised = 0;
+        for (const chapter of chapters) {
+          const index = (state.info?.chapters ?? []).findIndex((c) => c.path === chapter);
+          if (index < 0) continue;
+          if (index !== state.chapterIndex) await loadChapter(index, true);
+          if (state.mode === "source") await setMode("visual");
+          const changes = skipped.filter((w) => w.chapter === chapter).map((w) => ({ block: visual.blockOnLine(w.line), level: Number(w.details.to) })).filter((c) => !!c.block);
+          raised += visual.setLevels(changes);
+        }
+        all.disabled = true;
+        list.querySelectorAll(".warning-fix").forEach((b) => b.disabled = true);
+        flashStatus(t("editor.raisedAll", { count: raised }));
+      });
+      li.append(all);
+      list.prepend(li);
+    }
     $6("warnings-panel").classList.remove("hidden");
   }
   async function exportHandouts() {
@@ -35683,6 +35788,26 @@
       }
     }
     await convertWith(path, type.id, link);
+  }
+  var adopting = false;
+  async function adoptClueText(clue, markup) {
+    if (adopting || state.info?.readOnly) return;
+    adopting = true;
+    try {
+      await flush();
+      const entry = codex.entries.find((e) => e.id === clue);
+      if (!entry || entry.text) return;
+      const reply = await call("updateEntry", JSON.stringify({ id: clue, data: { fields: { description: markup } } }));
+      if (!reply?.ok) {
+        showMessage(reply?.error || t("error.codex.failed"));
+        return;
+      }
+      state.worldMarks.push(state.historyPos);
+      await reloadAfterWorld();
+      flashStatus(t("codex.clueAdopted", { title: entry.title }));
+    } finally {
+      adopting = false;
+    }
   }
   async function convertWith(path, type, link) {
     const reply = await call("convertToEntry", JSON.stringify({ chapter: state.chapterIndex, path, type, link }));
@@ -36068,8 +36193,7 @@
     visual.render();
   }
   function markErrorLine() {
-    const error3 = state.errors.find((e) => e.chapter === state.chapter?.path && e.line);
-    source?.markError(error3 ? error3.line : null);
+    source?.markErrors(state.errors.filter((e) => e.chapter === state.chapter?.path && e.line).map((e) => e.line));
   }
   function showErrors() {
     const banner = $6("preview-error");
@@ -36149,6 +36273,18 @@
   function fillSettings(info2, values) {
     const ro = !!state.info?.readOnly;
     $6("set-gameSystem").textContent = info2.gameSystem ?? "";
+    const systems = $6("set-gameSystemPick");
+    systems.textContent = "";
+    for (const g of info2.gameSystems ?? []) {
+      const o = document.createElement("option");
+      o.value = g.id + "@" + g.version;
+      o.textContent = g.name;
+      systems.append(o);
+    }
+    const shownSystem = info2.versionPreview?.which === "system" ? info2.versionPreview : info2.versions?.gameSystem;
+    systems.value = shownSystem ? (shownSystem.id ?? info2.gameSystemId) + "@" + (shownSystem.version ?? shownSystem.current) : "";
+    systems.disabled = ro || (info2.gameSystems ?? []).length < 2;
+    $6("set-gameSystem").classList.toggle("hidden", (info2.gameSystems ?? []).length > 1);
     const theme = $6("set-theme");
     theme.textContent = "";
     for (const option of info2.themes ?? []) {
@@ -36730,6 +36866,7 @@
         return newEntry(type, title ?? "");
       },
       openEntry: (id2) => openEntry(id2),
+      adoptClueText: (clue, markup) => void adoptClueText(clue, markup),
       openMap: (id2) => openMap(id2),
       onCollapseChange: () => renderOutline()
     };
@@ -36834,6 +36971,7 @@
     $6("w-example").addEventListener("click", () => openExample());
     $6("set-theme").addEventListener("change", (e) => settingsChanged("look", "theme", e.target.value));
     $6("set-gameSystemVersion").addEventListener("change", (e) => pickVersion("gameSystem", e.target.value));
+    $6("set-gameSystemPick").addEventListener("change", (e) => pickGameSystem(e.target.value));
     $6("set-themeVersion").addEventListener("change", (e) => pickVersion("theme", e.target.value));
     $6("version-apply").addEventListener("click", () => endVersionPreview(true));
     $6("version-cancel").addEventListener("click", () => endVersionPreview(false));

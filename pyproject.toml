@@ -1,6 +1,6 @@
 [project]
 name = "scriptorum"
-version = "0.6.8"
+version = "0.6.9"
 description = "A text processor for game masters writing their own adventures, with pixel-perfect PDF output."
 readme = "README.md"
 license = "GPL-3.0-or-later"

@@ -358,6 +358,12 @@ class Session:
         self.adventure.files = restored.files
         self.adventure.settings = restored.settings
         self.adventure.manifest["chapters"] = restored.manifest.get("chapters", [])
+        # F14 (M6-0.6.9): Change game system is one undo step too.
+        for key in ("game_system", "theme", "modules"):
+            if key in restored.manifest:
+                self.adventure.manifest[key] = restored.manifest[key]
+        self.version_preview = None
+        self.refresh_modules()
         self._world_changed()
         return True
 
@@ -639,7 +645,9 @@ class Session:
         pv = self.version_preview
         if pv is None or self.read_only:
             return self.settings_info()
-        self._pin(self.adventure.manifest, pv)
+        if pv["which"] == "system":
+            self._world_change()  # F14 (M6-0.6.9): one undo step
+        self._pin_any(self.adventure.manifest, pv)
         self.version_preview = None
         self.dirty = True
         self.clock.mark_changed()
@@ -658,8 +666,151 @@ class Session:
         preview build only. The adventure itself is left alone."""
         trial = copy.copy(self.adventure)
         trial.manifest = copy.deepcopy(self.adventure.manifest)
-        self._pin(trial.manifest, self.version_preview)
+        self._pin_any(trial.manifest, self.version_preview)
         return trial
+
+    def _pin_any(self, manifest: dict, pv: dict) -> None:
+        if pv["which"] == "system":
+            self._pin_system(manifest, pv)
+        else:
+            self._pin(manifest, pv)
+
+    # --- change game system (F14, decided 14 Nov 2026, M6-0.6.9) -------------------------
+    def _pin_system(self, manifest: dict, pv: dict) -> None:
+        """Another game system, and a theme for it when the old one is not
+        offered for it: only the game system, theme and module lines of the
+        manifest change. Modules the new ones require are added."""
+        old_gs, old_theme = manifest["game_system"]["id"], manifest["theme"]["id"]
+        manifest["game_system"] = {"id": pv["id"], "version": pv["version"]}
+        if pv.get("theme"):
+            manifest["theme"] = dict(pv["theme"])
+        # Each module line keeps its place, so changing back gives the same manifest.
+        swap = {old_gs: manifest["game_system"], **({old_theme: manifest["theme"]} if pv.get("theme") else {})}
+        modules = []
+        for m in manifest.get("modules", []):
+            ref = dict(swap.get(m["id"], m))
+            if all(x["id"] != ref["id"] for x in modules):
+                modules.append(ref)
+        for ref in (manifest["game_system"], manifest["theme"]):
+            if all(m["id"] != ref["id"] for m in modules):
+                modules.append(dict(ref))
+        for ref in (manifest["game_system"], manifest["theme"]):
+            module = self.library.get(ref["id"], ref["version"])
+            for need in (module.manifest.get("requires", []) if module else []):
+                if all(m["id"] != need["id"] for m in modules):
+                    versions = sorted((m.version for m in self.library.installed() if m.id == need["id"]),
+                                      key=parse_version, reverse=True)
+                    if versions:
+                        modules.insert(0, {"id": need["id"], "version": versions[0]})
+        manifest["modules"] = modules
+
+    def _trial(self, pv: dict) -> Adventure:
+        trial = copy.copy(self.adventure)
+        trial.manifest = copy.deepcopy(self.adventure.manifest)
+        self._pin_system(trial.manifest, pv)
+        return trial
+
+    def _modules_of(self, adventure: Adventure) -> dict:
+        modules = {}
+        for ref in adventure.modules:
+            module = self.library.get(ref.id, ref.version)
+            if module is not None:
+                modules[ref.id] = module
+        return modules
+
+    def game_system_fit(self, gs_id: str, version: str) -> dict:
+        """Before Change game system's preview: whether the current theme is
+        offered for the new game system, the themes that are, and what in
+        the adventure does not fit it."""
+        game = self.library.get(gs_id, version)
+        if game is None:
+            raise ModuleError("error.module.notInstalled", id=gs_id, version=version)
+        theme = self._theme()
+        offered = theme is not None and theme_offered_for(self.library, theme, game)
+        themes = []
+        for gs in self.game_systems():
+            if gs["id"] == gs_id:
+                themes = gs["themes"]
+        pv = {"which": "system", "id": gs_id, "version": version, "theme": None}
+        if not offered and themes:
+            pv["theme"] = {"id": themes[0]["id"], "version": themes[0]["version"]}
+        problems = self.fit_problems(self._trial(pv))
+        return {"id": gs_id, "version": version, "name": game.name, "themeOffered": offered, "themes": themes,
+                "problems": [self.problem_json(p) for p in problems]}
+
+    def preview_game_system(self, gs_id: str, version: str, theme_id: str = "", theme_version: str = "") -> dict:
+        """Change game system: try another game system in the preview, with
+        a theme offered for it. Nothing changes until it is applied."""
+        if self.read_only:
+            raise WorldError("error.scav.readOnly")
+        if gs_id == self.adventure.game_system.id and version == self.adventure.game_system.version:
+            self.version_preview = None
+            return self.settings_info()
+        game = self.library.get(gs_id, version)
+        if game is None:
+            raise ModuleError("error.module.notInstalled", id=gs_id, version=version)
+        theme_ref = None
+        theme = self._theme()
+        if theme_id and (theme_id != self.adventure.theme.id or theme_version not in ("", self.adventure.theme.version)):
+            theme = self.library.get(theme_id, theme_version) if theme_version else next(
+                (m for m in sorted(self.library.installed(), key=lambda m: parse_version(m.version), reverse=True)
+                 if m.id == theme_id), None)
+            if theme is None:
+                raise ModuleError("error.module.notInstalled", id=theme_id, version=theme_version)
+            theme_ref = {"id": theme.id, "version": theme.version}
+        if theme is None or not theme_offered_for(self.library, theme, game):
+            raise ModuleError("error.gameSystem.pickTheme", game=game.name)
+        self.version_preview = {"which": "system", "id": gs_id, "version": version,
+                                "from": self.adventure.game_system.id, "name": game.name,
+                                "theme": theme_ref, "major": False}
+        return self.settings_info()
+
+    def fit_problems(self, adventure: Optional[Adventure] = None) -> List[Problem]:
+        """F14 (M6-0.6.9): what in the adventure does not fit its game
+        system, each on the author's line: creature fields its stat block
+        lacks, dice outside its notation, elements it does not turn on and
+        codex entries of a type it lacks. Nothing is deleted; the build
+        leaves them out of its own copy (source.fit_to_game_system)."""
+        adventure = adventure or self.adventure
+        modules = self._modules_of(adventure)
+        game = modules.get(adventure.game_system.id)
+        if game is None:
+            return []
+        kinds = self.builder.element_kinds(adventure, modules)
+        every = {}
+        for module in self.library.installed():
+            if module.kind == "element-kit":
+                every.update(module.element_kinds())
+        problems: List[Problem] = []
+        for chapter in adventure.chapters:
+            text = adventure.chapter_text(chapter)
+            for item in source.fit_to_game_system(text, kinds, game.notation())[1]:
+                if item["kind"] == "dice":
+                    problems.append(Problem("warning.fit.dice", {"dice": item["dice"], "system": game.name},
+                                            chapter, item["line"]))
+                else:
+                    problems.append(Problem("warning.fit.fields", {"fields": ", ".join(item["fields"]), "system": game.name},
+                                            chapter, item["line"]))
+            seen = set()
+            for m in re.finditer(r"#([a-z][a-z0-9-]*)\(", text):
+                kind = m.group(1)
+                if kind in every and kind not in kinds and kind not in seen:
+                    seen.add(kind)
+                    problems.append(Problem("warning.fit.element", {"element": kind, "system": game.name},
+                                            chapter, text.count("\n", 0, m.start()) + 1))
+        types = set()
+        for module in modules.values():
+            if module.kind in ("element-kit", "game-system"):
+                types.update(module.codex_types())
+        counts: Dict[str, int] = {}
+        for e in self.world.entries().values():
+            if e.get("type") and e["type"] not in types and not str(e["type"]).startswith("t-"):
+                counts[e["type"]] = counts.get(e["type"], 0) + 1
+        names = {t: d.get("name", t) for t, d in self.world.types().items()}
+        for type_id, count in sorted(counts.items()):
+            problems.append(Problem("warning.fit.codexType", {"type": names.get(type_id, type_id), "count": count,
+                                                              "system": game.name}))
+        return problems
 
     def _kits(self):
         """The element kits this adventure pins (9.3)."""
@@ -864,6 +1015,9 @@ class Session:
             "gameSystem": (self.library.get(self.adventure.game_system.id, self.adventure.game_system.version).name
                            if self.library.get(self.adventure.game_system.id, self.adventure.game_system.version) else self.adventure.game_system.id),
             "themeId": self.adventure.theme.id,
+            # F14 (Change game system, M6-0.6.9): every installed game system.
+            "gameSystemId": self.adventure.game_system.id,
+            "gameSystems": [{"id": g["id"], "version": g["version"], "name": g["name"]} for g in self.game_systems()],
             "themes": [{"id": t["id"], "name": t["name"], "general": t.get("general", False)} for t in self.themes_offered()],
             # F14.3 (M6): the installed versions of both, and a version on trial.
             "versions": self.module_versions(),
@@ -1165,6 +1319,12 @@ class Session:
         result = self.builder.build(adventure, fmt, ppi, world=data, player=chunks,
                                     language=self.adventure.settings.get("language"),
                                     page_extra=page_extra, standards=standards)
+        if not result.ok:
+            # F4.10 (issue #12, M6-0.6.9): Typst stops at the first empty
+            # required field; Scriptorum's own check lists every one at once.
+            own = self.required_fields()
+            if own:
+                result.errors = own + [e for e in result.errors if e.key != "error.build.requiredField"]
         if result.ok:
             if not player:
                 result.warnings.extend(self.empty_elements())
@@ -1174,6 +1334,8 @@ class Session:
                 result.warnings.extend(self.long_handouts(self.last_sheets))
             result.warnings.extend(self.world_warnings(w))
             result.warnings.extend(self.heading_warnings())
+            if not player:
+                result.warnings.extend(self.fit_problems(adventure))
         return result
 
     @staticmethod
@@ -1289,6 +1451,29 @@ class Session:
                 elif max(float(stains.get("opacity", 0) or 0),
                          float((paper.get("marks") or {}).get("opacity", 0) or 0)) > 0.2:
                     problems.append(Problem("warning.paper.tooDark", {"paper": paper.get("id"), "theme": theme.name}))
+        return problems
+
+    def required_fields(self) -> List[Problem]:
+        """F4.10 (issue #12, M6-0.6.9): every element whose required field is
+        empty (a scene title, a person's name, a handout title), found in one
+        pass over the text, each on the author's line. Typst stops at the
+        first one, so without this the errors came one at a time."""
+        kinds = self.kinds()
+        problems = []
+        for chapter in self.adventure.chapters:
+            doc = source.parse(self.adventure.chapter_text(chapter), kinds)
+            for block in _walk(doc["blocks"]):
+                if block.get("type") != "element":
+                    continue
+                fields = block.get("fields") or {}
+                for f in kinds.get(block["kind"], {}).get("fields", []):
+                    if not f.get("required"):
+                        continue
+                    name = f["name"]
+                    value = fields.get(name, fields.get(name.replace("_", "-")))
+                    if value is None or value == "" or value == [] or value == {}:
+                        problems.append(Problem("error.build.requiredField", {"element": block["kind"], "field": name},
+                                                chapter, block.get("line")))
         return problems
 
     def empty_elements(self) -> List[Problem]:

@@ -504,7 +504,9 @@ def test_T_WORLD_28_line_tool_and_numbers_in_the_editor(ui):
     _click_map(ui, 0.45, 0.45)
     ui.wait_until(lambda: len(layers()[0]["items"]) == 4, 5)
     assert layers()[0]["items"][-1]["number"] == 3
-    ui.wait(200)
+    # Issue #11 (M6-0.6.9): wait until the new pin's settings are shown,
+    # not a fixed 0.2 s, which failed now and then with other tests running.
+    ui.wait_until(lambda: ui.js("!!document.querySelector('.map-pin-number-input')"), 10)
     ui.js("(() => { const n = document.querySelector('.map-pin-number-input'); n.value = '9'; n.dispatchEvent(new Event('change')); return true; })()")
     ui.wait_until(lambda: layers()[0]["items"][-1].get("number") == 9, 5)
     # Join the first two pins.

@@ -78,10 +78,14 @@ def test_T_MOD_13_plain_dice_and_free_stats(session):
     kinds = session.kinds()
     names = [f["name"] for f in kinds["creature"]["fields"]]
     assert "stat-lines" in names and "might" not in names
-    # Vaesen keeps its own dice: 2d10+1 is not Vaesen notation.
+    # Vaesen keeps its own dice: 2d10+1 is not Vaesen notation. Corrected for
+    # M6-0.6.9 (F14, Change game system): it no longer stops the build; it
+    # prints as plain text with a warning on its line.
     session.new("Vaesen dice", "scriptorum.free-league-vaesen", "1.0.0", "scriptorum.vaesen", "1.0.0")
     session.set_chapter_text(0, '#scene(title: "Test")[\n#dice(dice: "2d10+1")\n]\n')
-    assert not session.build("pdf").ok
+    result = session.build("pdf")
+    assert result.ok
+    assert [(w.key, w.line) for w in result.warnings if w.key.startswith("warning.fit.")] == [("warning.fit.dice", 2)]
 
 
 # --- T-LOOK-11 the Plain theme -------------------------------------------------------------
