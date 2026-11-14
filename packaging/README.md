@@ -72,4 +72,4 @@ docs/                    how to build on each platform, and the release checklis
 work/, dist/             made by builds (safe to delete)
 ```
 
-Kit version 1.0.2, 13 November 2026, for M6 part D. 1.0.2: the kit lives in the repository and builds on GitHub; the pinned versions come from the app's pyproject.toml; cryptography (F22) is carried into the app. 1.0.1: the library check works when ldconfig is not on the PATH (Debian).
+Kit version 1.0.3, 14 November 2026, for M6-0.6.9. 1.0.3: the macOS app is signed part by part from the inside out instead of in one pass with --deep, which macOS refused for Qt's web-engine framework; before signing, a stray folder in a framework's Versions folder (Qt's web-engine framework had Versions/Resources beside Versions/A) is moved into the real version folder. 1.0.2: the kit lives in the repository and builds on GitHub; the pinned versions come from the app's pyproject.toml; cryptography (F22) is carried into the app. 1.0.1: the library check works when ldconfig is not on the PATH (Debian).

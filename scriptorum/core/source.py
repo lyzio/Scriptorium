@@ -873,6 +873,85 @@ def complete_bare_calls(text: str, kinds: Dict[str, dict]) -> str:
     return "\n".join(lines)
 
 
+DICE_FORM = re.compile(r"^(\d*)[Dd](\d+)([+\-\u2212]\d+)?$")
+# Arguments every creature keeps whatever its game system (F7.4, 9.4).
+CREATURE_KEEP = frozenset({"id", "new-page"})
+
+
+def dice_fits(value: str, notation: dict) -> bool:
+    """11.7: whether a dice notation is one the game system uses, by the same
+    rule the core element kit's Typst applies (the die, and a modifier only
+    where notation.json allows it)."""
+    m = DICE_FORM.match(str(value))
+    if not m:
+        return False
+    if m.group(3) and not notation.get("modifiers", False):
+        return False
+    return "d" + m.group(2) in (notation.get("dice") or ["d6"])
+
+
+def _calls(text: str, name: str):
+    """Every ``#name(`` call in the text: (start, index of "(", end after ")")."""
+    for m in re.finditer(r"#" + re.escape(name) + r"\(", text):
+        paren = m.end() - 1
+        try:
+            yield m.start(), paren, _scan_code_group(text, paren)
+        except Unbalanced:
+            continue
+
+
+def fit_to_game_system(text: str, kinds: Dict[str, dict], notation: Optional[dict]) -> Tuple[str, List[dict]]:
+    """F14 (Change game system, M6-0.6.9): the build's own copy of a chapter
+    written for another game system. A creature field the game system's
+    stat block lacks (Plain's free stat lines in Vaesen) is left out of the
+    copy, and dice outside its notation (a d20 in Vaesen) print as their
+    plain notation instead of stopping the build. The author's text is never
+    changed, so changing back prints as before, and line numbers stay the
+    same. Returns the copy and what was left out, each with its line."""
+    found: List[dict] = []
+    edits: List[Tuple[int, int, str]] = []
+    creature = kinds.get("creature")
+    if creature:
+        allowed = {f["name"] for f in creature.get("fields", [])} | CREATURE_KEEP
+        for start, paren, end in _calls(text, "creature"):
+            parts = _split_args(text[paren + 1:end - 1])
+            kept, dropped = [], []
+            for part in parts:
+                m = re.match(r"([A-Za-z_][\w-]*)\s*:", part)
+                if m and m.group(1) not in allowed:
+                    dropped.append(m.group(1))
+                else:
+                    kept.append(part)
+            if dropped:
+                lines = text.count("\n", paren, end)
+                edits.append((paren, end, "(" + ", ".join(kept) + "\n" * lines + ")"))
+                found.append({"kind": "field", "element": "creature", "fields": dropped, "line": _line_of(text, start, 1)})
+    if notation is not None and kinds.get("dice"):
+        for start, paren, end in _calls(text, "dice"):
+            args = _split_args(text[paren + 1:end - 1])
+            value = None
+            for part in args:
+                m = re.match(r"dice\s*:\s*(.+)$", part, re.S)
+                if m:
+                    try:
+                        value = unquote_string(m.group(1).strip())
+                    except Exception:  # noqa: BLE001 - not a plain string: Typst judges it
+                        value = None
+            if value is None or dice_fits(value, notation):
+                continue
+            pad = "\n" * text.count("\n", start, end)
+            shown = escape_inline(value)
+            if text[end:end + 1] == "[":
+                # A dice block: its rule follows in [...]; it keeps its own ].
+                edits.append((start, end + 1, "#block[" + shown + " " + pad))
+            else:
+                edits.append((start, end, "#[" + shown + "]" + pad))
+            found.append({"kind": "dice", "dice": value, "line": _line_of(text, start, 1)})
+    for a, b, new in sorted(edits, reverse=True):
+        text = text[:a] + new + text[b:]
+    return text, sorted(found, key=lambda f: f["line"])
+
+
 # --------------------------------------------------------------------------
 # Helpers for the interface
 

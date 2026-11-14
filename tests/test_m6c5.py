@@ -793,8 +793,11 @@ def test_T_UI_46_paragraphs_fill_the_width(ui):
     column = ui.js("(() => { const v = document.getElementById('visual'); const s = getComputedStyle(v);"
                    " return v.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); })()")
     assert abs(_width(ui, top) - column) <= 2, (_width(ui, top), column)
-    if ui.window.width() >= 2000:
-        assert para > hundred * 1.1, (para, hundred)
+    # Corrected in M6-0.6.9: on macOS the window can report the 2400 px asked
+    # for while the screen gives the editor column far less, so the
+    # 100-character check goes by the column the page really has.
+    if column > hundred * 1.2:
+        assert para > hundred * 1.1, (para, hundred, column)
     ui.run("window.__scriptorum.setPreview(false)")
     para_hidden, _ = measure("preview hidden")
     assert para_hidden > para

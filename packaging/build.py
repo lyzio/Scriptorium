@@ -445,6 +445,120 @@ def package_linux(dist: Path, out: Path, version: str, arch: str) -> Path:
     return target
 
 
+# Mach-O magic numbers: 32- and 64-bit, either byte order, and universal ("fat") files.
+MACHO_MAGIC = {bytes.fromhex(h) for h in ("feedface", "cefaedfe", "feedfacf", "cffaedfe", "cafebabe", "bebafeca")}
+
+
+def is_macho(path: Path) -> bool:
+    if path.is_symlink() or not path.is_file() or path.suffix == ".class":
+        return False
+    try:
+        with open(path, "rb") as f:
+            return f.read(4) in MACHO_MAGIC
+    except OSError:
+        return False
+
+
+def framework_versions(framework: Path) -> list:
+    """The real version folders of a framework (Versions/A): those holding
+    the framework's own program file, never Versions/Current."""
+    versions = framework / "Versions"
+    if not versions.is_dir():
+        return []
+    return sorted(v for v in versions.iterdir()
+                  if v.is_dir() and not v.is_symlink() and is_macho(v / framework.stem))
+
+
+def _move(src: Path, dst: Path) -> None:
+    """Move a file or folder; every link inside it still points to the same
+    file afterwards (PyInstaller links data files with relative links)."""
+    items = [src, *src.rglob("*")] if src.is_dir() and not src.is_symlink() else [src]
+    links = [(p.relative_to(src), os.path.realpath(p)) for p in items if p.is_symlink()]
+    shutil.move(str(src), str(dst))
+    for rel, target in links:
+        link = dst / rel if str(rel) != "." else dst
+        link.unlink()
+        link.symlink_to(os.path.relpath(target, link.parent))
+
+
+def _merge_into(src: Path, dst: Path) -> None:
+    """Move src to dst; where dst is a link, the real files take its place;
+    where both are folders, their contents are merged."""
+    if dst.is_symlink():
+        dst.unlink()
+    if not dst.exists():
+        _move(src, dst)
+        return
+    if src.is_dir() and dst.is_dir():
+        for item in list(src.iterdir()):
+            _merge_into(item, dst / item.name)
+        shutil.rmtree(src, ignore_errors=True)
+    else:
+        src.unlink() if not src.is_dir() else shutil.rmtree(src)
+
+
+def repair_frameworks(app: Path) -> list:
+    """F10 (M6-0.6.9, kit 1.0.3): a framework may only hold version folders
+    and the Current link in its Versions folder. The frozen app had a stray
+    Versions/Resources beside Versions/A in Qt's web-engine framework, which
+    macOS refuses to sign ("bundle format unrecognized", "modified or invalid
+    version"). Such a folder is moved into the real version folder, where
+    Resources belongs. Returns what was moved, for the log."""
+    moved = []
+    for framework in sorted(app.rglob("*.framework")):
+        if framework.is_symlink() or not framework.is_dir():
+            continue
+        real = framework_versions(framework)
+        if not real:
+            continue
+        current = framework / "Versions" / "Current"
+        target = current.resolve() if current.is_symlink() and current.resolve() in [r.resolve() for r in real] else real[-1]
+        for entry in sorted((framework / "Versions").iterdir()):
+            if entry.name == "Current" or entry.is_symlink() or entry in real:
+                continue
+            _merge_into(entry, target / entry.name)
+            moved.append(f"{framework.name}/Versions/{entry.name} -> Versions/{target.name}/{entry.name}")
+        if not current.is_symlink() and not current.exists():
+            current.symlink_to(target.name)
+    return moved
+
+
+def macos_signing_order(app: Path) -> list:
+    """F10 (M6-0.6.9): what to sign, from the inside out. First every program
+    and library file, deepest first; then every nested bundle, deepest first
+    (a framework by its real version folders, since macOS refuses Qt's
+    web-engine framework when it is signed as a whole); the app itself last.
+    Signing the app in one pass with --deep stopped both macOS builds of
+    v0.6.8 ("embedded framework contains modified or invalid version")."""
+    def depth(p: Path) -> int:
+        return len(p.relative_to(app).parts)
+
+    contents = app / "Contents"
+    files = sorted((p for p in contents.rglob("*") if is_macho(p)), key=lambda p: (-depth(p), str(p)))
+    bundles = []
+    for p in contents.rglob("*"):
+        if p.is_symlink() or not p.is_dir():
+            continue
+        if p.suffix == ".app":
+            bundles.append(p)
+        elif p.suffix == ".framework":
+            bundles.extend(framework_versions(p) or [p])
+    bundles.sort(key=lambda p: (-depth(p), str(p)))
+    return files + bundles + [app]
+
+
+def sign_macos_app(app: Path) -> None:
+    """F10: an ad-hoc signature on every part, from the inside out, never
+    with --deep; then the whole app is checked as macOS checks it."""
+    for line in repair_frameworks(app):
+        say(f"repaired the framework layout: {line}")
+    order = macos_signing_order(app)
+    say(f"signing {len(order)} parts of the app from the inside out")
+    for part in order:
+        run(["codesign", "--force", "--sign", "-", part], stdout=subprocess.DEVNULL)
+    run(["codesign", "--verify", "--deep", "--strict", "--verbose=2", app])
+
+
 def package_macos(dist: Path, out: Path, version: str, arch: str) -> Path:
     app = dist / "Scriptorum.app"
     resources = app / "Contents" / "Resources"
@@ -452,8 +566,7 @@ def package_macos(dist: Path, out: Path, version: str, arch: str) -> Path:
         shutil.copy2(KIT / "icons" / f"{ext}.icns", resources / f"{ext}.icns")
     # Unsigned (D6), but every Mac with Apple silicon needs at least an ad-hoc
     # signature to run a program; it is free and needs no Apple account.
-    run(["codesign", "--force", "--deep", "--sign", "-", app])
-    run(["codesign", "--verify", "--deep", "--strict", app])
+    sign_macos_app(app)
     stage = dist.parent / "dmg"
     if stage.exists():
         shutil.rmtree(stage)

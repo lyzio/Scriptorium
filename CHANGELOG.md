@@ -2,6 +2,16 @@
 
 What each version of Scriptorum brings, newest first. The section of a version is also the description of its [GitHub release](https://github.com/lyzio/Scriptorum/releases).
 
+## 0.6.9 — 14 November 2026 (Milestone 6, fix build)
+
+- **Change game system (F14).** File ▸ Settings… ▸ Adventure now lists every installed game system, so an adventure started in Plain can move to Vaesen (or back). Before anything changes, a short list says what in the adventure does not fit the new game system: dice it does not use (a d20 in Vaesen), creature values its stat block lacks (Plain's free stat lines), elements it does not turn on and codex types it lacks. Then the preview shows the result under "Previewing Vaesen 1.0.0" with Apply and Cancel. Apply changes only the game system and theme lines of the adventure; the text, codex, maps and handouts stay exactly as they are, so every person and place comes along. Nothing is deleted: what does not fit stays in the text, gets a warning on its line, and the adventure still prints (a d20 prints as the plain text "d20"). If the theme is made only for the old game system, the first theme offered for the new one is used, and you can pick another on the same page afterwards. One Undo brings the old game system back.
+- **Every error at once (issue #12).** When several elements lack a required value (a scene's title, a person's name, a handout's title), all of them are listed in the warnings panel and marked on their lines after one build, instead of one at a time. Errors from Typst itself can still come one at a time, because Typst stops at the first.
+- **A clue's text, written where you are (issue #7).** A new clue has no description. Text you type into its Information item now becomes the clue's description when you leave the box, so every other place that shows the clue prints it too. Undo takes it back. A clue that already has a description is never overwritten.
+- **Raise all (issue #6).** When more than one heading skips a level, the warnings panel has a Raise all button that raises every one in one undo step.
+- **macOS installers build again (F10).** Both .dmg builds of v0.6.8 stopped at signing: macOS refused Qt's web-engine framework when the whole app was signed in one pass with `--deep`. The frozen app had a stray folder in that framework (`Versions/Resources` beside `Versions/A`); the kit (1.0.3) now moves it where it belongs and signs every part from the inside out. The installers that did build are now attached to the release even when another platform fails.
+- **A test that failed now and then (issue #11).** The map editor test T-WORLD-28 waits until the pin settings are shown instead of a fixed time.
+- **The Windows installer has not been tested yet.** If you try it, please report anything that does not work as an [issue](https://github.com/lyzio/Scriptorum/issues).
+
 ## 0.6.8 — 13 November 2026 (Milestone 6, part D: installers built on GitHub)
 
 - **Installers for every platform, built on GitHub.** Each release has the Linux AppImage, a macOS .dmg for Apple Silicon and one for Intel Macs, and the Windows setup program. **The Windows installer has not been tested yet:** if you try it, please report anything that does not work as an [issue](https://github.com/lyzio/Scriptorum/issues), so it can be improved.

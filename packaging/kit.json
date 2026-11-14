@@ -1,5 +1,5 @@
 {
-  "kit_version": "1.0.2",
+  "kit_version": "1.0.3",
   "app_name": "Scriptorum",
   "python": "3.13",
   "bundle_id": "org.scriptorum.Scriptorum",

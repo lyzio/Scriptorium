@@ -1,51 +1,48 @@
-# Scriptorum M6-0.6.8 — Changes
+# Scriptorum M6-0.6.9 — Changes
 
-Base: **M6-0.6.7** (`main`, accepted and merged on 13 November 2026). This build moves the packaging kit into the repository and builds the installers on GitHub (M6 part D, decided 13 November 2026). The app itself is unchanged apart from its version.
+Base: **M6-0.6.8** (`main`, accepted and merged on 13 November 2026). A fix build before macOS and Windows are accepted (design document section 10, "M6 fix build 0.6.9", decided 14 November 2026):
 
-- the packaging kit in `packaging/`, as kit 1.0.2
-- the installers job: every tag `v<version>` builds the AppImage (Ubuntu 22.04), both .dmg files (macos-15, macos-15-intel) and the Windows setup program, and attaches them to the release; Run workflow builds test installers from any branch or tag
-- the kit takes the pinned versions from the app's `pyproject.toml`, and carries cryptography into the installed app (F22)
-- the kit's `--release` check reads the value of `UPDATE_URL`; before, it refused every build from 0.6.7 on
-- the code-scanning findings fixed: three regular expressions of Cytoscape.js made safe while bundling, and a false alarm in the release script
-- `CHANGELOG.md` holds what each version brings and describes each release; the README is a plain README; developer notes in `docs/DEVELOPING.md`
-- the Windows installer is marked as not yet tested
+- **Change game system (F14):** File ▸ Settings… ▸ Adventure lists every installed game system; a list says what does not fit before the preview; Apply changes only the manifest's game system, theme and module lines, in one undo step; what does not fit is kept, warned about on its line, and left out of the build's own copy only (creature fields the stat block lacks; dice outside the notation print as plain text)
+- **every empty required field is listed at once** (issue #12, F4.10): Scriptorum's own check, since Typst stops at the first; every error line is marked in Source mode
+- **a clue's text from its Information item** (issue #7, F3): while the clue has no description, text typed into the item becomes the description when the author leaves the box
+- **Raise all** in the warnings panel (issue #6, F4)
+- **installers:** the macOS app signed part by part from the inside out (kit 1.0.3), since `codesign --deep` refused Qt's web-engine framework and stopped both macOS builds of v0.6.8; the attach job runs when one platform failed
+- **issue #11:** the map editor test T-WORLD-28 waits for the pin settings instead of a fixed time
 
-Issues fixed: none (no open issue was planned for this build).
+Issues fixed: #6, #7, #11, #12. Issue #1 stays open for a later build (the project manager's adventure uses Plain, which has no Creature codex type by design).
 
-Every file not listed here is unchanged from M6-0.6.7.
+Every file not listed here is unchanged from M6-0.6.8.
 
 ## Added
 
 | File | Why |
 |---|---|
-| `packaging/` | The packaging kit 1.0.1 as received from the project manager, changed as below (kit 1.0.2) |
-| `.github/workflows/installers.yml` | The installers job on GitHub (F10, M6 part D) |
-| `tests/test_m6d.py` | T-REL-09, T-REL-11 |
-| `CHANGELOG.md` | What each version brings; each release's description |
-| `docs/DEVELOPING.md` | Running the tests, trying things by hand, the interface build, the layout and developer notes, moved from the README |
-| `ui-src/build.mjs` | The interface build, with the safe Cytoscape patterns |
-
-## Changed (inside `packaging/`, from kit 1.0.1)
-
-| File | Why |
-|---|---|
-| `packaging/build.py` | The pins come from the app's `pyproject.toml` (cryptography needed from 0.6.7); the release check reads `UPDATE_URL`'s value; the kit's own `work/` and `dist/` are never copied into the build's source |
-| `packaging/common/scriptorum.spec` | cryptography's code and package metadata go into the app (F22) |
-| `packaging/kit.json` | Kit 1.0.2; no pins of its own |
-| `packaging/README.md`, `packaging/docs/*.md` | The kit in the repository, on GitHub, and the pins from the app |
+| `tests/test_m6e.py` | T-MOD-26, T-BUILD-32, T-UI-48, T-WORLD-34, T-REL-12 |
 
 ## Changed
 
 | File | Why |
 |---|---|
-| `.gitignore` | `packaging/work/`, `packaging/dist/` |
-| `ui-src/package.json` | `npm run build` runs `build.mjs` |
-| `scriptorum/ui/dist/app.js` | Rebuilt: only the two Cytoscape lines differ |
-| `tools/release.py` | The release description from CHANGELOG.md; two variables renamed for code scanning |
-| `tests/test_m6c5.py` | T-UI-46 for narrower screens; T-REL-06's test versions |
-| `README.md` | A plain README: what Scriptorum is, downloads, running from source, reporting problems, what it is built with, licence |
-| `TEST-REPORT.md`, `CHANGES.md` | This build |
-| `scriptorum/__init__.py`, `pyproject.toml` | Version 0.6.8 |
+| `scriptorum/core/session.py` | Change game system: fit list, preview, apply in one undo step, fit warnings on every build (F14); `required_fields` lists every empty required field (#12); world undo restores the game system, theme and module lines |
+| `scriptorum/core/source.py` | `fit_to_game_system` and `dice_fits`: the build's own copy of text written for another game system (F14) |
+| `scriptorum/core/build.py` | The build runs the fit step on its copy of each chapter |
+| `scriptorum/app/bridge.py` | `gameSystemFit`, `previewGameSystem` |
+| `scriptorum/ui/index.html` | The game system list on the settings page |
+| `ui-src/app.ts` | Change game system on the settings page; Raise all (#6); a clue's text adopted (#7); every error line marked (#12); undo after a game system change reloads the elements |
+| `ui-src/editor.ts` | `setLevels` (Raise all in one undo step); a clue item's text saved on leaving the box; several error lines in Source mode |
+| `scriptorum/ui/dist/app.js` | Built from `ui-src/` |
+| `scriptorum/bundled/scriptorum.en/strings/*.json` | Texts for Change game system, the fit warnings, Raise all and the adopted clue text |
+| `packaging/build.py`, `packaging/kit.json` | Kit 1.0.3: a stray `Versions/Resources` in Qt's web-engine framework is moved into `Versions/A`; macOS signed from the inside out, never with --deep |
+| `packaging/README.md`, `packaging/docs/BUILD-MACOS.md` | Kit 1.0.3 and the signing |
+| `.github/workflows/installers.yml` | The attach job runs unless the run is cancelled, and says so when nothing built |
+| `tests/test_m5.py` | T-MOD-13: a die outside Vaesen's notation now prints as text with a warning (corrected, F14) |
+| `tests/test_m6d.py` | T-REL-09: the new attach condition and kit 1.0.3 (corrected) |
+| `tests/test_m6c3.py` | T-WORLD-28 waits for the pin settings (#11) |
+| `tests/test_m6c5.py` | T-UI-46: the 100-character check goes by the editor column's real width (failed on the project manager's Mac) |
+| `tests/scenarios/run_use_scenarios.py` | The Change game system steps |
+| `CHANGELOG.md` | The 0.6.9 section |
+| `CHANGES.md`, `TEST-REPORT.md` | This build |
+| `scriptorum/__init__.py`, `pyproject.toml`, `ui-src/package.json` | Version 0.6.9 |
 
 ## Deleted
 

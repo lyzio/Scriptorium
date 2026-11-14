@@ -63,7 +63,7 @@ def stopped_problem(stopped: "BuildStopped") -> "Problem":
 from scriptorum import __version__
 from scriptorum.core.modules import Library, Module, package_import
 from scriptorum.core.scav import Adventure, ModuleRef
-from scriptorum.core.source import complete_bare_calls, quote_string, retag_outside_headings
+from scriptorum.core.source import complete_bare_calls, fit_to_game_system, quote_string, retag_outside_headings
 
 PRELUDE_LINES = 1  # lines put in front of every chapter in the build folder
 PACKAGE_IMPORT = re.compile(r'"@[a-z0-9-]+/')
@@ -283,6 +283,9 @@ class Builder:
                 raise BuildFailed(Problem("error.build.packagesNotAllowed", {}, chapter, line))
             # F4, F7.4 (M6 part C): older text with a bare #column-break
             # and the like prints correctly; the author's file is unchanged.
+            # F14 (M6-0.6.9): text written for another game system prints;
+            # what does not fit is left out of this copy only.
+            content = fit_to_game_system(content, kinds, game_system.notation())[0]
             content = complete_bare_calls(content, kinds)
             content = retag_outside_headings(content, kinds)
             target = self.work_dir / chapter

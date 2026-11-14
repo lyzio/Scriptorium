@@ -55,6 +55,9 @@ export interface EditorHooks {
   /** A new codex entry; with a name and a single type it is made at once. */
   createEntry(type: string, title?: string): Promise<string | null>;
   openEntry(id: string): void;
+  /** Issue #7 (M6-0.6.9): text typed into a clue's Information item while
+   *  the clue has no description becomes the clue's description. */
+  adoptClueText?(clue: string, markup: string): void;
   openMap(id: string): void;
   /** M6 part C2: a short message in the status bar (why a block may not go somewhere). */
   flash(text: string): void;
@@ -948,10 +951,21 @@ export class VisualEditor {
       }
       const text = typeof block.body === "string" ? block.body : "";
       const onEnter = def.enterAddsNext ? () => this.insert(def.id, place) : undefined;
-      box.append(this.richBox(text, (markup) => {
+      const body = this.richBox(text, (markup) => {
         block.body = markup;
         this.changed(block, place.chain);
-      }, "el-body", def.name, { onEnter }));
+      }, "el-body", def.name, { onEnter });
+      if (clue && clueEntry && !this.readOnly) {
+        // Issue #7 (M6-0.6.9): leaving the item saves its text as the clue's
+        // description, so every place that shows the clue prints it. The
+        // item keeps its own text, so undoing the description loses nothing.
+        body.addEventListener("focusout", () => {
+          const markup = typeof block.body === "string" ? block.body.trim() : "";
+          const now = this.hooks.codexEntries().find((e) => e.id === clue);
+          if (markup && now && !now.text) this.hooks.adoptClueText?.(clue, markup);
+        });
+      }
+      box.append(body);
     } else if (def.body === "blocks") {
       if (!isDoc(block.body)) block.body = { blocks: [], trail: "\n" };
       const inner = el("div", "el-children");
@@ -1540,6 +1554,23 @@ export class VisualEditor {
     return true;
   }
 
+  /** Raise all (issue #6, M6-0.6.9): set several sub-headings' levels in
+   *  one undo step. Each pair is a block and the level it gets. */
+  setLevels(changes: { block: Block; level: number }[]): number {
+    const chains: Block[] = [];
+    let done = 0;
+    for (const { block, level } of changes) {
+      const found = this.placeOfBlock(block);
+      if (!found || block.type !== "heading") continue;
+      block.level = level;
+      delete block.raw;
+      chains.push(...found.chain);
+      done++;
+    }
+    if (done) this.commit(chains);
+    return done;
+  }
+
   /** The block that starts on a line of the chapter (the warnings panel). */
   blockOnLine(line: number): Block | null {
     return this.order().find((b) => b.line === line) ?? null;
@@ -1809,7 +1840,8 @@ function textOf(block: Block, def: ElementDef | undefined): string {
 export class SourceEditor {
   private gutter: HTMLElement;
   readonly area: HTMLTextAreaElement;
-  private errorLine: number | null = null;
+  // F4.10 (issue #12, M6-0.6.9): every line with an error is marked.
+  private errorLines = new Set<number>();
 
   constructor(root: HTMLElement, onInput: (text: string) => void, onCaret: (line: number) => void) {
     root.textContent = "";
@@ -1847,8 +1879,8 @@ export class SourceEditor {
     return this.area.value.slice(0, this.area.selectionStart).split("\n").length;
   }
 
-  markError(line: number | null): void {
-    this.errorLine = line;
+  markErrors(lines: number[]): void {
+    this.errorLines = new Set(lines);
     this.renderGutter();
   }
 
@@ -1865,8 +1897,9 @@ export class SourceEditor {
     const count = this.area.value.split("\n").length;
     this.gutter.textContent = "";
     for (let i = 1; i <= count; i++) {
-      const span = el("span", i === this.errorLine ? "gl error" : "gl");
-      if (i === this.errorLine) span.title = t("editor.errorLine");
+      const bad = this.errorLines.has(i);
+      const span = el("span", bad ? "gl error" : "gl");
+      if (bad) span.title = t("editor.errorLine");
       span.textContent = String(i) + "\n";
       this.gutter.append(span);
     }

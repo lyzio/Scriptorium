@@ -445,6 +445,7 @@ def use_02(window: MainWindow) -> dict:
     sub_heading_steps(s, window)
     codex_steps(s, window)
     update_steps(s, window)
+    game_system_steps(s, window)
     return s.summary()
 
 
@@ -850,9 +851,16 @@ def codex_steps(s: Scenario, window: MainWindow) -> None:
     text = s.state()["text"] or ""
     s.check("a card of the new codex person", '#card(entry: "c-greta-vik")' in text)
     s.check("a clue Information of the Hint variant", 'clue: "c-the-wet-footprints", variant: "hint"' in text)
-    s.note("friction", "A new clue starts without a description. Text typed into its Information item stays with that item "
-           "and is not saved as the clue's description, so a second item showing the same clue prints only its name "
-           "until the clue is given a text in the codex.", "later")
+    # Issue #7 (M6-0.6.9): text typed into the new clue's item becomes the
+    # clue's description when the Game Master leaves the box.
+    body = "[...document.querySelectorAll('#visual .clue-empty')].map(n => n.closest('.el').querySelector('.el-body'))[0]"
+    s.act("Type what the clue is into its box", f"(() => {{ const b = {body}; b.focus(); b.textContent = 'Wet prints lead to the boathouse.'; "
+          "b.dispatchEvent(new Event('input', {bubbles: true})); return true; })()")
+    s.act("Leave the box", f"(() => {{ const b = {body}; b.dispatchEvent(new FocusEvent('focusout', {{bubbles: true}})); return true; }})()", 1500)
+    entry = window.bridge.session.world.entries().get("c-the-wet-footprints") or {}
+    s.check("the text became the clue's description (issue #7)",
+            (entry.get("fields") or {}).get("description") == "Wet prints lead to the boathouse.")
+    text = s.state()["text"] or ""
     (OUT / "T-USE-02-codex.typ").write_text(text, "utf-8")
     s.shot("codex")
     reply = json.loads(window.bridge.exportTo(str(OUT / "T-USE-02-codex.pdf")))
@@ -914,6 +922,32 @@ def update_steps(s: Scenario, window: MainWindow) -> None:
         return [r.getBoundingClientRect().width, r.closest('.blk').getBoundingClientRect().width]; })()""") or [0, 1]
     s.check("the paragraph fills the width of its block (issue #8)", abs(widths[0] - widths[1]) <= 2)
     s.shot("full-width")
+
+
+def game_system_steps(s: Scenario, window: MainWindow) -> None:
+    """M6 fix build 0.6.9 steps of T-USE-02: the Game Master changes the
+    adventure's game system from Vaesen to Plain on the settings page, reads
+    what does not fit, tries it in the preview, applies it and undoes it."""
+    s.act("Settings ▸ Adventure", "window.__scriptorum.openSettingsWindow('adventure')", 600)
+    options = s.js("[...document.querySelectorAll('#set-gameSystemPick option')].map(o => o.textContent)") or []
+    s.check("the settings page lists every game system", "Plain" in options and "Vaesen" in options)
+    s.act("Pick Plain as the game system", """(() => { const p = document.getElementById('set-gameSystemPick');
+        p.value = 'scriptorum.plain-system@1.0.0'; p.dispatchEvent(new Event('change')); return true; })()""", 1200)
+    asked = s.js("document.getElementById('ask-dialog').open ? document.getElementById('ask-text').textContent : ''") or ""
+    s.check("a list says what does not fit, before the preview", asked.startswith("Change to Plain?"))
+    s.check("the theme made for Vaesen is swapped for one made for Plain", "is not made for Plain" in asked)
+    s.shot("game-system-fit")
+    s.act("Try it in the preview", "window.__u.click('#ask-yes')", 2500)
+    bar = s.js("document.getElementById('version-bar').classList.contains('hidden') ? '' : document.getElementById('version-bar-text').textContent") or ""
+    s.check("the preview bar says Previewing Plain", bar.startswith("Previewing Plain"))
+    before = s.state()["text"]
+    s.act("Apply", "window.__u.click('#version-apply')", 2500)
+    s.check("the adventure now uses Plain", window.bridge.session.adventure.game_system.id == "scriptorum.plain-system")
+    s.check("the text is unchanged", s.state()["text"] == before)
+    s.flush()
+    s.check("it still builds", s.state()["errors"] == [])
+    s.act("Undo", "window.__scriptorum.undo()", 2500)
+    s.check("one undo brings Vaesen back", window.bridge.session.adventure.game_system.id == "scriptorum.free-league-vaesen")
 
 
 def _scenario_png(width: int = 2400, height: int = 1600) -> bytes:

@@ -640,6 +640,28 @@ class Bridge(QObject):
         self._title_changed()
         return _json(info)
 
+    @Slot(str, str, result=str)
+    def gameSystemFit(self, gs_id: str, version: str) -> str:
+        """F14 (Change game system, M6-0.6.9): what does not fit, and the
+        themes offered for the new game system, before the preview."""
+        try:
+            return _json({"ok": True, **self.session.game_system_fit(gs_id, version)})
+        except Exception as exc:  # noqa: BLE001
+            return self._error(exc)
+
+    @Slot(str, result=str)
+    def previewGameSystem(self, request: str) -> str:
+        """F14 (M6-0.6.9): try another game system in the preview; Apply and
+        Cancel are the version bar's (applyVersion, cancelVersion)."""
+        data = json.loads(request)
+        try:
+            info = self.session.preview_game_system(data["id"], data["version"], data.get("theme", ""),
+                                                    data.get("themeVersion", ""))
+        except Exception as exc:  # noqa: BLE001
+            return self._error(exc)
+        self._changed()
+        return _json(info)
+
     @Slot(result=str)
     def cancelVersion(self) -> str:
         info = self.session.cancel_version_preview()
